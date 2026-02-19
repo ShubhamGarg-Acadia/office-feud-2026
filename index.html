@@ -2,647 +2,284 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0A1628">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>🎮 Office Feud</title>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700;800&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    /* ============================================================
-       SETUP INSTRUCTIONS (read before playing!)
-       ============================================================
-       1. Go to supabase.com → create a FREE account & project
-       2. Go to SQL Editor → paste & run the contents of setup.sql
-       3. Go to Project Settings → API → copy your URL and anon key
-       4. Replace YOUR_SUPABASE_URL and YOUR_SUPABASE_ANON_KEY below
-       5. Host this file on netlify.com (drag & drop, free!) or GitHub Pages
-       6. Share the URL with your team!
-       Moderator password: OFFICEFEUD2025
-       ============================================================ */
 
+  <!--
+  ================================================================
+  OFFICE FEUD — SETUP INSTRUCTIONS
+  ================================================================
+  1. supabase.com → free account → new project
+  2. SQL Editor → New Query → paste setup.sql → Run
+  3. Project Settings → API → copy Project URL + anon key
+  4. Paste them below where it says YOUR_SUPABASE_URL etc.
+  5. Upload this file to GitHub Pages (free hosting)
+  6. Share link. Moderator password: OFFICEFEUD2025
+  ================================================================
+  TO RESET BETWEEN GAMES → Moderator sees Reset button in lobby
+  ================================================================
+  -->
+
+  <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --navy: #0A1628;
-      --navy2: #0f2040;
-      --gold: #FFD700;
-      --gold2: #FFA500;
-      --red: #e63946;
-      --green: #2dc653;
-      --white: #ffffff;
-      --gray: #8899aa;
-      --card-bg: #112240;
-      --card-border: #1e3a5f;
+      --navy:  #0A1628; --navy2: #0f2040;
+      --gold:  #FFD700; --gold2: #FFA500;
+      --red:   #e63946; --green: #2dc653;
+      --white: #ffffff; --gray:  #8899aa;
+      --card:  #112240; --border:#1e3a5f;
     }
 
-    html, body {
-      height: 100%;
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      min-height: 100vh;
       background: var(--navy);
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(255,215,0,0.04) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(30,80,160,0.15) 0%, transparent 50%);
       color: var(--white);
       font-family: 'Barlow', sans-serif;
       overflow-x: hidden;
+      /* Eliminates 300ms tap delay on all mobile browsers */
+      touch-action: manipulation;
     }
 
-    body {
-      background-image: 
-        radial-gradient(ellipse at 20% 50%, rgba(255,215,0,0.04) 0%, transparent 60%),
-        radial-gradient(ellipse at 80% 20%, rgba(30,80,160,0.15) 0%, transparent 50%);
-      min-height: 100vh;
-    }
-
-    /* SCREENS */
-    .screen {
-      display: none;
-      min-height: 100vh;
-      padding: 16px;
-      max-width: 900px;
-      margin: 0 auto;
-    }
-    .screen.active { display: flex; flex-direction: column; }
+    .screen { display: none; min-height: 100vh; padding: 16px; max-width: 900px; margin: 0 auto; flex-direction: column; }
+    .screen.active { display: flex; }
 
     /* TYPOGRAPHY */
     .game-title {
-      font-family: 'Oswald', sans-serif;
-      font-weight: 800;
+      font-family: 'Oswald', sans-serif; font-weight: 800;
       font-size: clamp(2rem, 6vw, 3.5rem);
       background: linear-gradient(135deg, #FFD700, #FFA500, #FFD700);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      text-align: center;
-      line-height: 1.1;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      text-transform: uppercase; letter-spacing: 2px; text-align: center; line-height: 1.1;
     }
-    .screen-title {
-      font-family: 'Oswald', sans-serif;
-      font-weight: 700;
-      font-size: clamp(1.4rem, 4vw, 2rem);
-      color: var(--gold);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    h3 {
-      font-family: 'Oswald', sans-serif;
-      font-weight: 600;
-      color: var(--gold);
-      font-size: 1.1rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
+    .screen-title { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: clamp(1.4rem,4vw,2rem); color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
+    h3 { font-family: 'Oswald', sans-serif; font-weight: 600; color: var(--gold); font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
 
-    /* CARDS */
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 20px;
-    }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
 
-    /* BUTTONS */
+    /* BUTTONS — touch-action on every interactive element */
     .btn {
-      display: inline-flex; align-items: center; justify-content: center;
-      gap: 8px;
-      padding: 14px 28px;
-      border: none; border-radius: 8px;
-      font-family: 'Oswald', sans-serif;
-      font-weight: 700; font-size: 1.1rem;
-      text-transform: uppercase; letter-spacing: 1px;
-      cursor: pointer; transition: all 0.2s;
-      min-height: 52px;
-      width: 100%;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 14px 28px; border: none; border-radius: 8px;
+      font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 1.05rem;
+      text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+      transition: transform 0.12s, opacity 0.12s;
+      min-height: 52px; width: 100%;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none; -webkit-user-select: none;
     }
-    .btn-gold {
-      background: linear-gradient(135deg, #FFD700, #FFA500);
-      color: var(--navy);
-    }
-    .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255,215,0,0.4); }
-    .btn-gold:active { transform: translateY(0); }
-    .btn-outline {
-      background: transparent;
-      border: 2px solid var(--gold);
-      color: var(--gold);
-    }
-    .btn-outline:hover { background: rgba(255,215,0,0.1); }
-    .btn-red { background: var(--red); color: white; }
-    .btn-green { background: var(--green); color: white; }
+    .btn-gold    { background: linear-gradient(135deg, #FFD700, #FFA500); color: var(--navy); }
+    .btn-outline { background: transparent; border: 2px solid var(--gold); color: var(--gold); }
+    .btn-danger  { background: var(--red); color: white; }
+    .btn:active:not(:disabled) { transform: scale(0.97); }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
 
-    /* INPUTS */
+    /* INPUTS — font-size 16px prevents iOS auto-zoom on focus */
     .input-field {
-      width: 100%;
-      padding: 14px 16px;
-      background: rgba(255,255,255,0.07);
-      border: 2px solid var(--card-border);
-      border-radius: 8px;
-      color: var(--white);
-      font-size: 1rem;
-      font-family: 'Barlow', sans-serif;
-      outline: none;
-      transition: border-color 0.2s;
+      width: 100%; padding: 14px 16px;
+      background: rgba(255,255,255,0.07); border: 2px solid var(--border);
+      border-radius: 8px; color: var(--white);
+      font-size: 16px; /* must be ≥16px to prevent iOS zoom */
+      font-family: 'Barlow', sans-serif; outline: none; transition: border-color 0.2s;
     }
     .input-field:focus { border-color: var(--gold); }
     .input-field::placeholder { color: var(--gray); }
-    label {
-      display: block;
-      font-family: 'Oswald', sans-serif;
-      font-size: 0.85rem;
-      letter-spacing: 1px;
-      color: var(--gray);
-      margin-bottom: 6px;
-      text-transform: uppercase;
-    }
+    label { display: block; font-family: 'Oswald', sans-serif; font-size: 0.85rem; letter-spacing: 1px; color: var(--gray); margin-bottom: 6px; text-transform: uppercase; }
 
-    /* ERROR / SUCCESS */
     .msg { padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; margin-top: 8px; }
-    .msg-error { background: rgba(230,57,70,0.2); border: 1px solid var(--red); color: #ff8080; }
-    .msg-success { background: rgba(45,198,83,0.15); border: 1px solid var(--green); color: #80ffa0; }
-    .msg-info { background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.3); color: var(--gold); }
+    .msg-error   { background: rgba(230,57,70,0.2);   border: 1px solid var(--red);   color: #ff8080; }
+    .msg-success { background: rgba(45,198,83,0.15);  border: 1px solid var(--green); color: #80ffa0; }
+    .msg-info    { background: rgba(255,215,0,0.1);   border: 1px solid rgba(255,215,0,0.3); color: var(--gold); }
 
-    /* DIVIDER */
-    .divider {
-      height: 1px; background: var(--card-border); margin: 16px 0;
-    }
+    .badge { display: inline-block; padding: 4px 12px; background: rgba(255,215,0,0.15); border: 1px solid rgba(255,215,0,0.4); border-radius: 20px; font-family: 'Oswald', sans-serif; font-size: 0.8rem; letter-spacing: 1px; color: var(--gold); text-transform: uppercase; }
 
-    /* BADGE */
-    .badge {
-      display: inline-block; padding: 4px 12px;
-      background: rgba(255,215,0,0.15);
-      border: 1px solid rgba(255,215,0,0.4);
-      border-radius: 20px;
-      font-family: 'Oswald', sans-serif;
-      font-size: 0.8rem; letter-spacing: 1px;
-      color: var(--gold); text-transform: uppercase;
-    }
+    @keyframes popIn   { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes pulse   { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+    @keyframes bounce  { from { transform: translateY(0); } to { transform: translateY(-8px); } }
+    @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes spinIn  { from { transform: rotate(-20deg) scale(0.5); opacity: 0; } to { transform: rotate(0) scale(1); opacity: 1; } }
+    @keyframes rotate  { to { transform: rotate(360deg); } }
 
-    /* ============================================================
-       SCREEN 1: LOGIN
-       ============================================================ */
-    #screen-login {
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      gap: 24px;
-    }
-    .login-header { text-align: center; }
-    .login-subtitle {
-      color: var(--gray);
-      margin-top: 8px;
-      font-size: 1rem;
-    }
-    .login-box { width: 100%; max-width: 440px; }
-    .login-form { display: flex; flex-direction: column; gap: 16px; }
+    /* Inline loading spinner */
+    .spinner { width: 18px; height: 18px; border: 3px solid rgba(10,22,40,0.3); border-top-color: var(--navy); border-radius: 50%; animation: rotate 0.7s linear infinite; display: inline-block; flex-shrink: 0; }
+
+    /* Connection banner */
+    #conn-bar { position: fixed; top: 0; left: 0; right: 0; background: var(--red); color: white; text-align: center; padding: 8px; font-family: 'Oswald', sans-serif; font-size: 0.85rem; letter-spacing: 1px; z-index: 500; transform: translateY(-100%); transition: transform 0.3s; }
+    #conn-bar.show { transform: translateY(0); }
+
+    #online-indicator { position: fixed; top: 10px; right: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 0.75rem; color: var(--gray); display: flex; align-items: center; gap: 6px; z-index: 50; }
+    .online-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; }
+    .online-dot.red { background: var(--red); }
+
+    #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(120px); background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 20px; font-family: 'Oswald', sans-serif; font-size: 0.95rem; color: var(--gold); letter-spacing: 0.5px; transition: transform 0.3s; z-index: 300; max-width: 88vw; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
+
+    /* RESET MODAL */
+    #reset-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 400; align-items: center; justify-content: center; padding: 20px; }
+    #reset-modal.show { display: flex; }
+    .modal-box { background: var(--card); border: 1px solid var(--red); border-radius: 12px; padding: 28px; max-width: 380px; width: 100%; text-align: center; }
+    .modal-box h3 { color: var(--red); margin-bottom: 12px; }
+    .modal-box p  { color: var(--gray); font-size: 0.95rem; margin-bottom: 4px; line-height: 1.5; }
+    .modal-btns   { display: flex; gap: 12px; margin-top: 20px; }
+    .modal-btns .btn { flex: 1; }
+
+    /* ── SCREEN 1: LOGIN ── */
+    #screen-login { justify-content: center; align-items: center; gap: 24px; }
+    .login-box    { width: 100%; max-width: 440px; }
+    .login-form   { display: flex; flex-direction: column; gap: 16px; }
     label.mod-toggle-row {
-      display: flex; align-items: center; gap: 10px;
-      cursor: pointer; padding: 8px 0;
-      text-transform: none; letter-spacing: normal;
-      color: var(--white); font-family: 'Barlow', sans-serif;
-      font-size: 1rem; margin-bottom: 0;
+      display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px 0;
+      text-transform: none; letter-spacing: normal; color: var(--gray);
+      font-family: 'Barlow', sans-serif; font-size: 0.95rem; margin-bottom: 0;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
     }
-    .mod-toggle-row input[type="checkbox"] {
-      width: 18px; height: 18px; accent-color: var(--gold); cursor: pointer;
-    }
-    .mod-toggle-row span { font-size: 0.9rem; color: var(--gray); }
+    .mod-toggle-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--gold); cursor: pointer; flex-shrink: 0; }
 
-    /* ============================================================
-       SCREEN 2: LOBBY / WAITING ROOM
-       ============================================================ */
+    /* ── SCREEN 2: LOBBY ── */
     #screen-lobby { gap: 20px; padding-top: 24px; }
-    .lobby-header { text-align: center; }
-    .player-count {
-      display: inline-block;
-      font-family: 'Oswald', sans-serif;
-      font-size: 2.5rem; font-weight: 700;
-      color: var(--gold);
-    }
-    .rules-list {
-      list-style: none;
-      display: flex; flex-direction: column; gap: 10px;
-    }
-    .rules-list li {
-      display: flex; gap: 12px; align-items: flex-start;
-      font-size: 0.95rem; line-height: 1.5;
-    }
-    .rule-icon {
-      font-size: 1.1rem; flex-shrink: 0; margin-top: 1px;
-    }
-    .players-grid {
-      display: flex; flex-wrap: wrap; gap: 8px;
-    }
-    .player-chip {
-      background: rgba(255,215,0,0.1);
-      border: 1px solid rgba(255,215,0,0.3);
-      border-radius: 20px;
-      padding: 5px 14px;
-      font-size: 0.85rem;
-      color: var(--gold);
-      animation: popIn 0.3s ease;
-    }
+    .player-count { font-family: 'Oswald', sans-serif; font-size: 2.5rem; font-weight: 700; color: var(--gold); }
+    .rules-list   { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .rules-list li { display: flex; gap: 12px; align-items: flex-start; font-size: 0.95rem; line-height: 1.5; }
+    .rule-icon  { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+    .players-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .player-chip { background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.3); border-radius: 20px; padding: 5px 14px; font-size: 0.85rem; color: var(--gold); animation: popIn 0.3s ease; }
     .player-chip.mod { border-color: var(--gold); background: rgba(255,215,0,0.2); }
-    @keyframes popIn {
-      from { transform: scale(0.8); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-    .waiting-msg {
-      text-align: center; color: var(--gray);
-      font-style: italic; padding: 8px 0;
-      animation: pulse 2s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 0.6; }
-      50% { opacity: 1; }
-    }
+    .waiting-msg { text-align: center; color: var(--gray); font-style: italic; padding: 8px 0; animation: pulse 2s ease-in-out infinite; }
 
-    /* ============================================================
-       SCREEN 3: QUESTION
-       ============================================================ */
+    /* ── SCREEN 3: QUESTION ── */
     #screen-question { gap: 16px; padding-top: 16px; }
-
-    /* Top bar */
-    .q-topbar {
-      display: flex; justify-content: space-between; align-items: center;
-      background: var(--card-bg); border-radius: 10px; padding: 10px 16px;
-      border: 1px solid var(--card-border);
-      position: sticky; top: 8px; z-index: 10;
-    }
-    .q-counter {
-      font-family: 'Oswald', sans-serif;
-      font-weight: 700; font-size: 1rem;
-      color: var(--gray);
-    }
-    .q-counter span { color: var(--white); }
-    .q-score-display {
-      font-family: 'Oswald', sans-serif;
-      font-size: 0.9rem; color: var(--gold);
-    }
+    .q-topbar { display: flex; justify-content: space-between; align-items: center; background: var(--card); border-radius: 10px; padding: 10px 16px; border: 1px solid var(--border); position: sticky; top: 8px; z-index: 10; }
+    .q-counter { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 1rem; color: var(--gray); }
+    .q-score-display { font-family: 'Oswald', sans-serif; font-size: 0.9rem; color: var(--gold); }
     .q-score-display strong { font-size: 1.2rem; }
 
-    /* Timer */
-    .timer-wrap {
-      display: flex; justify-content: center;
-    }
-    .timer-circle {
-      position: relative; width: 80px; height: 80px;
-    }
-    .timer-svg {
-      transform: rotate(-90deg);
-      width: 80px; height: 80px;
-    }
-    .timer-bg { fill: none; stroke: #1e3a5f; stroke-width: 6; }
-    .timer-arc {
-      fill: none; stroke: var(--gold); stroke-width: 6;
-      stroke-linecap: round;
-      stroke-dasharray: 226;
-      stroke-dashoffset: 0;
-      transition: stroke-dashoffset 1s linear, stroke 0.3s;
-    }
+    .timer-wrap { display: flex; justify-content: center; }
+    .timer-circle { position: relative; width: 80px; height: 80px; }
+    .timer-svg { transform: rotate(-90deg); width: 80px; height: 80px; }
+    .timer-bg  { fill: none; stroke: #1e3a5f; stroke-width: 6; }
+    .timer-arc { fill: none; stroke: var(--gold); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 226; stroke-dashoffset: 0; transition: stroke-dashoffset 0.9s linear, stroke 0.3s; }
     .timer-arc.urgent { stroke: var(--red); }
-    .timer-num {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'Oswald', sans-serif;
-      font-size: 1.6rem; font-weight: 700;
-    }
+    .timer-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Oswald', sans-serif; font-size: 1.6rem; font-weight: 700; }
     .timer-num.urgent { color: var(--red); }
 
-    /* Question text */
-    .q-text {
-      font-family: 'Oswald', sans-serif;
-      font-size: clamp(1.2rem, 3.5vw, 1.8rem);
-      font-weight: 700;
-      text-align: center;
-      line-height: 1.3;
-      padding: 0 8px;
-    }
+    .q-text { font-family: 'Oswald', sans-serif; font-size: clamp(1.2rem, 3.5vw, 1.8rem); font-weight: 700; text-align: center; line-height: 1.3; padding: 0 8px; }
 
-    /* Answer grid */
-    .answers-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-    @media (max-width: 399px) {
-      .answers-grid { grid-template-columns: 1fr; }
-    }
-    @media (min-width: 700px) {
-      .answers-grid { grid-template-columns: repeat(4, 1fr); }
-    }
+    .answers-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    @media (max-width: 399px) { .answers-grid { grid-template-columns: 1fr; } }
+    @media (min-width: 700px) { .answers-grid { grid-template-columns: repeat(4, 1fr); } }
 
     .ans-btn {
-      padding: 14px 10px;
-      min-height: 64px;
-      background: var(--card-bg);
-      border: 2px solid var(--card-border);
-      border-radius: 10px;
-      color: var(--white);
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 1rem; font-weight: 600;
-      cursor: pointer; transition: all 0.2s;
+      padding: 14px 10px; min-height: 64px;
+      background: var(--card); border: 2px solid var(--border); border-radius: 10px;
+      color: var(--white); font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1rem; font-weight: 600; cursor: pointer;
+      transition: border-color 0.12s, background 0.12s, transform 0.1s;
       display: flex; align-items: center; justify-content: center;
-      text-align: center;
-      line-height: 1.2;
+      text-align: center; line-height: 1.2;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none; -webkit-user-select: none;
     }
-    .ans-btn:hover:not(:disabled) {
-      border-color: var(--gold);
-      background: rgba(255,215,0,0.1);
-      transform: translateY(-2px);
-    }
-    .ans-btn.selected {
-      border-color: var(--gold);
-      background: rgba(255,215,0,0.2);
-      color: var(--gold);
-    }
-    .ans-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+    .ans-btn:active:not(:disabled) { transform: scale(0.96); }
+    .ans-btn:hover:not(:disabled)  { border-color: var(--gold); background: rgba(255,215,0,0.1); }
+    .ans-btn.selected { border-color: var(--gold); background: rgba(255,215,0,0.2); color: var(--gold); }
     .ans-btn:disabled:not(.selected) { opacity: 0.4; }
+    .ans-btn:disabled { cursor: default; }
 
-    .locked-msg {
-      text-align: center;
-      font-size: 0.95rem;
-      color: var(--green);
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-    .mod-answer-status {
-      background: rgba(30,58,95,0.8);
-      border: 1px solid var(--card-border);
-      border-radius: 10px; padding: 12px 16px;
-      display: flex; justify-content: space-between; align-items: center;
-      font-size: 0.9rem;
-    }
-    .answered-count {
-      font-family: 'Oswald', sans-serif;
-      font-size: 1.3rem; color: var(--gold);
-    }
+    .locked-msg { text-align: center; font-size: 0.95rem; color: var(--green); animation: pulse 1.5s ease-in-out infinite; }
+    .mod-answer-status { background: rgba(30,58,95,0.8); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .answered-count { font-family: 'Oswald', sans-serif; font-size: 1.3rem; color: var(--gold); }
 
-    /* ============================================================
-       SCREEN 4: ANSWER REVEAL (Family Feud board)
-       ============================================================ */
+    /* ── SCREEN 4: REVEAL ── */
     #screen-reveal { gap: 16px; padding-top: 20px; }
-
-    .reveal-header { text-align: center; }
-    .reveal-qtext {
-      font-family: 'Oswald', sans-serif;
-      font-size: clamp(1rem, 3vw, 1.4rem);
-      font-weight: 600;
-      color: var(--gray);
-      text-align: center;
-      font-style: italic;
-    }
-
-    .feud-board {
-      display: flex; flex-direction: column; gap: 8px;
-    }
-
-    .feud-row {
-      display: flex; align-items: stretch;
-      border-radius: 8px; overflow: hidden;
-      height: 52px;
-      opacity: 0;
-      transform: translateX(-20px);
-      transition: opacity 0.4s, transform 0.4s;
-    }
-    .feud-row.revealed {
-      opacity: 1; transform: translateX(0);
-    }
-
-    .feud-rank {
-      width: 44px; flex-shrink: 0;
-      background: var(--navy2);
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'Oswald', sans-serif;
-      font-size: 1.1rem; font-weight: 700;
-      color: var(--gold);
-      border-right: 2px solid var(--gold);
-    }
-
-    .feud-answer-text {
-      flex: 1;
-      background: var(--navy2);
-      display: flex; align-items: center;
-      padding: 0 14px;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 1rem; font-weight: 600;
-      position: relative;
-      overflow: hidden;
-    }
-    .feud-bar {
-      position: absolute; left: 0; top: 0; bottom: 0;
-      background: linear-gradient(90deg, rgba(255,215,0,0.15), transparent);
-      transition: width 0.8s ease;
-    }
+    .reveal-qtext  { font-family: 'Oswald', sans-serif; font-size: clamp(1rem,3vw,1.4rem); font-weight: 600; color: var(--gray); text-align: center; font-style: italic; }
+    .feud-board { display: flex; flex-direction: column; gap: 8px; }
+    .feud-row { display: flex; align-items: stretch; border-radius: 8px; overflow: hidden; height: 52px; opacity: 0; transform: translateX(-20px); transition: opacity 0.4s, transform 0.4s; }
+    .feud-row.revealed { opacity: 1; transform: translateX(0); }
+    .feud-rank { width: 44px; flex-shrink: 0; background: var(--navy2); display: flex; align-items: center; justify-content: center; font-family: 'Oswald', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--gold); border-right: 2px solid var(--gold); }
+    .feud-answer-text { flex: 1; background: var(--navy2); display: flex; align-items: center; padding: 0 14px; font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 600; position: relative; overflow: hidden; }
+    .feud-bar { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, rgba(255,215,0,0.15), transparent); transition: width 0.8s ease; }
     .feud-answer-label { position: relative; z-index: 1; }
-
-    .feud-score {
-      width: 52px; flex-shrink: 0;
-      background: var(--gold);
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'Oswald', sans-serif;
-      font-size: 1.3rem; font-weight: 800;
-      color: var(--navy);
-    }
-
-    .feud-row:nth-child(1) .feud-rank { color: #FFD700; }
-    .feud-row:nth-child(2) .feud-rank { color: #E8E8E8; }
-    .feud-row:nth-child(3) .feud-rank { color: #CD7F32; }
-
-    .my-result {
-      background: var(--card-bg);
-      border: 2px solid var(--card-border);
-      border-radius: 10px; padding: 16px;
-      text-align: center;
-    }
+    .feud-score { width: 52px; flex-shrink: 0; background: var(--gold); display: flex; align-items: center; justify-content: center; font-family: 'Oswald', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--navy); }
+    .my-result { background: var(--card); border: 2px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
     .my-result.correct-top { border-color: var(--gold); }
-    .my-result-score {
-      font-family: 'Oswald', sans-serif;
-      font-size: 2rem; font-weight: 800;
-      color: var(--gold);
-    }
-    .top-answer-badge {
-      display: inline-block;
-      background: linear-gradient(135deg, #FFD700, #FFA500);
-      color: var(--navy); border-radius: 20px;
-      padding: 4px 14px;
-      font-family: 'Oswald', sans-serif;
-      font-size: 0.85rem; font-weight: 700;
-      letter-spacing: 1px; text-transform: uppercase;
-      margin-top: 6px;
-    }
+    .my-result-score { font-family: 'Oswald', sans-serif; font-size: 2rem; font-weight: 800; color: var(--gold); }
+    .top-answer-badge { display: inline-block; background: linear-gradient(135deg, #FFD700, #FFA500); color: var(--navy); border-radius: 20px; padding: 4px 14px; font-family: 'Oswald', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-top: 6px; }
 
-    /* ============================================================
-       SCREEN 5: LEADERBOARD
-       ============================================================ */
+    /* ── SCREEN 5: LEADERBOARD ── */
     #screen-leaderboard { gap: 20px; padding-top: 20px; }
-
-    .podium-row {
-      display: flex; justify-content: center; gap: 12px;
-      align-items: flex-end; margin: 10px 0;
-    }
-    .podium-item {
-      display: flex; flex-direction: column; align-items: center;
-      gap: 6px; text-align: center;
-    }
+    .podium-row  { display: flex; justify-content: center; gap: 12px; align-items: flex-end; margin: 10px 0; }
+    .podium-item { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
     .podium-trophy { font-size: 2.5rem; animation: bounce 1s ease infinite alternate; }
-    .podium-item:nth-child(1) .podium-trophy { font-size: 3rem; animation-delay: 0s; }
+    .podium-item:nth-child(1) .podium-trophy { font-size: 3rem; }
     .podium-item:nth-child(2) .podium-trophy { animation-delay: 0.15s; }
     .podium-item:nth-child(3) .podium-trophy { animation-delay: 0.3s; }
-    @keyframes bounce {
-      from { transform: translateY(0); }
-      to { transform: translateY(-8px); }
-    }
-    .podium-name {
-      font-family: 'Oswald', sans-serif;
-      font-weight: 700; font-size: 1rem;
-      max-width: 90px; word-break: break-all;
-      line-height: 1.1;
-    }
-    .podium-score {
-      font-family: 'Oswald', sans-serif;
-      font-size: 1.3rem; font-weight: 800;
-      color: var(--gold);
-    }
-    .podium-block {
-      width: 80px; border-radius: 6px 6px 0 0;
-      background: linear-gradient(180deg, rgba(255,215,0,0.3), rgba(255,165,0,0.15));
-      border: 1px solid rgba(255,215,0,0.4);
-    }
-
+    .podium-name  { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 1rem; max-width: 90px; word-break: break-all; line-height: 1.1; }
+    .podium-score { font-family: 'Oswald', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--gold); }
+    .podium-block { width: 80px; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, rgba(255,215,0,0.3), rgba(255,165,0,0.15)); border: 1px solid rgba(255,215,0,0.4); }
     .lb-list { display: flex; flex-direction: column; gap: 6px; }
-    .lb-row {
-      display: flex; align-items: center; gap: 12px;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 8px; padding: 10px 14px;
-      animation: slideIn 0.3s ease;
-    }
+    .lb-row  { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; animation: slideIn 0.3s ease; }
     .lb-row.me { border-color: rgba(255,215,0,0.5); background: rgba(255,215,0,0.07); }
-    @keyframes slideIn {
-      from { transform: translateX(-20px); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-    .lb-rank {
-      font-family: 'Oswald', sans-serif;
-      font-size: 1.3rem; font-weight: 700;
-      color: var(--gray);
-      width: 30px; flex-shrink: 0;
-    }
-    .lb-name { flex: 1; font-weight: 500; font-size: 0.95rem; }
-    .lb-score {
-      font-family: 'Oswald', sans-serif;
-      font-size: 1.1rem; font-weight: 700;
-      color: var(--gold);
-    }
-    .lb-delta {
-      font-size: 0.8rem; width: 26px; text-align: center;
-    }
-    .lb-delta.up { color: var(--green); }
-    .lb-delta.down { color: var(--red); }
-    .lb-delta.same { color: var(--gray); }
+    .lb-rank  { font-family: 'Oswald', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--gray); width: 30px; flex-shrink: 0; }
+    .lb-name  { flex: 1; font-weight: 500; font-size: 0.95rem; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lb-score { font-family: 'Oswald', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--gold); }
+    .lb-delta { font-size: 0.8rem; width: 26px; text-align: center; flex-shrink: 0; }
+    .lb-delta.up { color: var(--green); } .lb-delta.down { color: var(--red); } .lb-delta.same { color: var(--gray); }
+    .rank-msg { text-align: center; padding: 12px 16px; background: rgba(255,215,0,0.07); border: 1px solid rgba(255,215,0,0.2); border-radius: 10px; font-style: italic; font-size: 0.95rem; color: var(--gold); }
 
-    .rank-msg {
-      text-align: center; padding: 12px 16px;
-      background: rgba(255,215,0,0.07);
-      border: 1px solid rgba(255,215,0,0.2);
-      border-radius: 10px;
-      font-style: italic; font-size: 0.95rem;
-      color: var(--gold);
-    }
-
-    /* ============================================================
-       SCREEN 6: END / FINAL
-       ============================================================ */
+    /* ── SCREEN 6: END ── */
     #screen-end { gap: 24px; padding-top: 20px; align-items: center; }
-    .end-hero { text-align: center; }
-    .end-emoji { font-size: 4rem; animation: spin 2s ease; }
-    @keyframes spin {
-      from { transform: rotate(-20deg) scale(0.5); opacity: 0; }
-      to { transform: rotate(0) scale(1); opacity: 1; }
-    }
-    .end-headline {
-      font-family: 'Oswald', sans-serif;
-      font-size: clamp(1.2rem, 4vw, 1.8rem);
-      font-weight: 800; color: var(--gold);
-      margin-top: 12px;
-      line-height: 1.2;
-    }
-    .end-sub { color: var(--gray); margin-top: 8px; font-size: 0.95rem; }
+    .end-emoji    { font-size: 4rem; animation: spinIn 1s ease; }
+    .end-headline { font-family: 'Oswald', sans-serif; font-size: clamp(1.2rem,4vw,1.8rem); font-weight: 800; color: var(--gold); margin-top: 12px; line-height: 1.2; }
+    .end-sub      { color: var(--gray); margin-top: 8px; font-size: 0.95rem; }
 
-    /* ============================================================
-       CONFETTI CANVAS
-       ============================================================ */
-    #confetti-canvas {
-      position: fixed; inset: 0;
-      pointer-events: none; z-index: 100;
-    }
-
-    /* ============================================================
-       TOAST
-       ============================================================ */
-    #toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
-      background: var(--card-bg); border: 1px solid var(--card-border);
-      border-radius: 8px; padding: 12px 20px;
-      font-family: 'Oswald', sans-serif; font-size: 1rem;
-      color: var(--gold); letter-spacing: 0.5px;
-      transition: transform 0.3s; z-index: 200; white-space: nowrap;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-    }
-    #toast.show { transform: translateX(-50%) translateY(0); }
-
-    /* PLAYERS ONLINE INDICATOR */
-    #online-indicator {
-      position: fixed; top: 10px; right: 12px;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 20px; padding: 4px 12px;
-      font-size: 0.75rem; color: var(--gray);
-      display: flex; align-items: center; gap: 6px;
-      z-index: 50;
-    }
-    .online-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--green);
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    /* UTILITY */
-    .flex-col { display: flex; flex-direction: column; }
-    .gap-sm { gap: 8px; }
-    .gap-md { gap: 16px; }
-    .gap-lg { gap: 24px; }
-    .text-center { text-align: center; }
-    .text-gray { color: var(--gray); font-size: 0.9rem; }
-    .mt-auto { margin-top: auto; }
-    .w-full { width: 100%; }
-
-    /* SPACER */
-    .spacer { flex: 1; }
-
-    @media (min-width: 600px) {
-      .screen { padding: 24px; }
-      .answers-grid { grid-template-columns: repeat(2, 1fr); }
-    }
+    .spacer  { flex: 1; }
+    .w-full  { width: 100%; }
+    @media (min-width: 600px) { .screen { padding: 24px; } }
   </style>
 </head>
 <body>
 
+<div id="conn-bar">⚠️ Connection lost — reconnecting...</div>
 <canvas id="confetti-canvas"></canvas>
-<div id="online-indicator">
-  <div class="online-dot"></div>
-  <span id="online-count">0 online</span>
-</div>
+<div id="online-indicator"><div class="online-dot" id="online-dot"></div><span id="online-count">0 online</span></div>
 <div id="toast"></div>
 
-<!-- ============================================================
-     SCREEN 1: LOGIN
-============================================================ -->
-<div id="screen-login" class="screen active">
-  <div class="login-header">
-    <div class="game-title">🎮 Office Feud</div>
-    <p class="login-subtitle">The Remote Team Game Show</p>
+<!-- RESET MODAL -->
+<div id="reset-modal">
+  <div class="modal-box">
+    <h3>⚠️ Reset Game?</h3>
+    <p>This deletes ALL players, scores, and answers, returning everything to the lobby.</p>
+    <p style="color:var(--red);font-size:0.85rem;margin-top:6px">Everyone will need to rejoin. This cannot be undone.</p>
+    <div id="reset-modal-msg"></div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeResetModal()">Cancel</button>
+      <button class="btn btn-danger" id="reset-confirm-btn" onclick="confirmReset()">Yes, Reset Everything</button>
+    </div>
   </div>
-  <div class="login-box card">
+</div>
+
+<!-- ═══════ SCREEN 1: LOGIN ═══════ -->
+<div id="screen-login" class="screen active">
+  <div style="text-align:center">
+    <div class="game-title">🎮 Office Feud</div>
+    <p style="color:var(--gray);margin-top:8px">The Remote Team Game Show</p>
+  </div>
+  <div class="card login-box">
     <div class="login-form">
       <div>
         <label>Your Name</label>
-        <input type="text" id="name-input" class="input-field" placeholder="Enter your name..." maxlength="30" autocomplete="off">
+        <input type="text" id="name-input" class="input-field" placeholder="Enter your name..." maxlength="30" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
       </div>
       <label class="mod-toggle-row" for="mod-check">
         <input type="checkbox" id="mod-check">
@@ -650,26 +287,21 @@
       </label>
       <div id="mod-pw-wrap" style="display:none">
         <label>Moderator Password</label>
-        <input type="password" id="mod-pw" class="input-field" placeholder="Enter moderator password...">
+        <input type="password" id="mod-pw" class="input-field" placeholder="Enter moderator password..." autocomplete="off">
       </div>
       <div id="login-msg"></div>
-      <button class="btn btn-gold" onclick="handleLogin()">Join the Game →</button>
+      <button class="btn btn-gold" id="join-btn" onclick="handleLogin()">Join the Game →</button>
     </div>
   </div>
-  <p class="text-center text-gray" style="margin-top:8px">Survey of 50 colleagues · 20 questions · Pure fun 🎉</p>
+  <p style="text-align:center;color:var(--gray);font-size:0.85rem;margin-top:4px">Survey of 50 colleagues · 20 questions · Pure fun 🎉</p>
 </div>
 
-<!-- ============================================================
-     SCREEN 2: LOBBY
-============================================================ -->
+<!-- ═══════ SCREEN 2: LOBBY ═══════ -->
 <div id="screen-lobby" class="screen">
-  <div class="lobby-header">
+  <div style="text-align:center">
     <div class="game-title">Office Feud</div>
-    <div style="margin-top:8px">
-      <span class="badge">Waiting Room</span>
-    </div>
+    <div style="margin-top:8px"><span class="badge">Waiting Room</span></div>
   </div>
-
   <div class="card">
     <div style="text-align:center;margin-bottom:12px">
       <div style="color:var(--gray);font-size:0.85rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Players Joined</div>
@@ -677,7 +309,6 @@
     </div>
     <div class="players-grid" id="lobby-players-list"></div>
   </div>
-
   <div class="card">
     <h3 style="margin-bottom:12px">📋 How to Play</h3>
     <ul class="rules-list">
@@ -690,23 +321,20 @@
       <li><span class="rule-icon">🎬</span><span>The Moderator controls the pace — follow their lead!</span></li>
     </ul>
   </div>
-
-  <div id="lobby-mod-btn" style="display:none">
-    <button class="btn btn-gold" onclick="startGame()">🚀 Start Game!</button>
+  <div id="lobby-mod-controls" style="display:none;flex-direction:column;gap:10px">
+    <button class="btn btn-gold" id="start-btn" onclick="startGame()">🚀 Start Game!</button>
+    <button class="btn btn-danger" onclick="openResetModal()">🔄 Reset / Clean Previous Game</button>
   </div>
   <div id="lobby-wait-msg" class="waiting-msg">⏳ Waiting for the Moderator to start the game...</div>
   <div class="spacer"></div>
 </div>
 
-<!-- ============================================================
-     SCREEN 3: QUESTION
-============================================================ -->
+<!-- ═══════ SCREEN 3: QUESTION ═══════ -->
 <div id="screen-question" class="screen">
   <div class="q-topbar">
-    <div class="q-counter">Q <span id="q-num">1</span>/20</div>
+    <div class="q-counter">Q <span id="q-num">1</span> <span style="color:var(--gray)">/20</span></div>
     <div class="q-score-display">Score: <strong id="q-score">0</strong></div>
   </div>
-
   <div class="timer-wrap">
     <div class="timer-circle">
       <svg class="timer-svg" viewBox="0 0 80 80">
@@ -716,46 +344,32 @@
       <div class="timer-num" id="timer-num">15</div>
     </div>
   </div>
-
-  <div class="q-text" id="q-text">Question text goes here</div>
-
+  <div class="q-text" id="q-text"></div>
   <div class="answers-grid" id="answers-grid"></div>
-
   <div id="locked-msg" class="locked-msg" style="display:none">✅ Answer locked in! Waiting for others...</div>
-
   <div id="mod-answer-status" class="mod-answer-status" style="display:none">
-    <div>
-      <span class="answered-count" id="answered-count">0</span>
-      <span class="text-gray"> / </span>
-      <span id="total-count" class="text-gray">0 answered</span>
-    </div>
-    <button class="btn btn-outline" style="width:auto;padding:8px 16px;font-size:0.85rem" onclick="forceReveal()">Skip Timer & Reveal</button>
+    <div><span class="answered-count" id="answered-count">0</span><span style="color:var(--gray)" id="total-count"> / 0 answered</span></div>
+    <button class="btn btn-outline" style="width:auto;padding:8px 16px;font-size:0.85rem;min-height:40px" onclick="forceReveal()">Skip &amp; Reveal</button>
   </div>
   <div class="spacer"></div>
 </div>
 
-<!-- ============================================================
-     SCREEN 4: ANSWER REVEAL
-============================================================ -->
+<!-- ═══════ SCREEN 4: REVEAL ═══════ -->
 <div id="screen-reveal" class="screen">
-  <div class="reveal-header">
+  <div style="text-align:center">
     <div class="screen-title">Survey Says!</div>
     <div class="reveal-qtext" id="reveal-qtext"></div>
   </div>
-
   <div class="feud-board" id="feud-board"></div>
-
   <div class="my-result" id="my-result">
     <div style="color:var(--gray);font-size:0.85rem;margin-bottom:4px">Your Answer: <strong id="my-answer-text" style="color:white">—</strong></div>
     <div class="my-result-score">+<span id="my-earned">0</span> pts</div>
     <div id="top-answer-badge" style="display:none" class="top-answer-badge">🔝 Top Answer!</div>
   </div>
-
   <div class="card" style="text-align:center">
     <div style="color:var(--gray);font-size:0.85rem">Total Score</div>
     <div style="font-family:'Oswald',sans-serif;font-size:2rem;font-weight:800;color:var(--gold)" id="reveal-total">0</div>
   </div>
-
   <div id="reveal-mod-btn" style="display:none">
     <button class="btn btn-gold" id="reveal-next-btn" onclick="moderatorNext()">➡️ Next Question</button>
   </div>
@@ -763,992 +377,583 @@
   <div class="spacer"></div>
 </div>
 
-<!-- ============================================================
-     SCREEN 5: LEADERBOARD
-============================================================ -->
+<!-- ═══════ SCREEN 5: LEADERBOARD ═══════ -->
 <div id="screen-leaderboard" class="screen">
   <div style="text-align:center">
-    <div class="screen-title" id="lb-title">🏆 Standings After Q5</div>
-    <div class="badge" id="lb-subtitle">Halfway there!</div>
+    <div class="screen-title" id="lb-title">🏆 Standings</div>
+    <div class="badge" id="lb-subtitle"></div>
   </div>
-
   <div class="podium-row" id="podium-row"></div>
   <div class="rank-msg" id="my-rank-msg"></div>
-
   <div>
     <h3 style="margin-bottom:10px">Full Rankings</h3>
     <div class="lb-list" id="lb-full-list"></div>
   </div>
-
   <div id="lb-mod-btn" style="display:none">
-    <button class="btn btn-gold" id="lb-next-btn" onclick="moderatorNext()">▶️ Continue to Next Question</button>
+    <button class="btn btn-gold" id="lb-next-btn">▶️ Continue</button>
   </div>
   <div id="lb-wait-msg" class="waiting-msg">⏳ Waiting for the Moderator...</div>
   <div class="spacer"></div>
 </div>
 
-<!-- ============================================================
-     SCREEN 6: END
-============================================================ -->
+<!-- ═══════ SCREEN 6: END ═══════ -->
 <div id="screen-end" class="screen">
-  <div class="end-hero">
+  <div class="end-hero" style="text-align:center">
     <div class="end-emoji">🏆</div>
     <div class="end-headline" id="end-headline">And the winner is...</div>
     <div class="end-sub">Office Feud Champion!</div>
   </div>
-
   <div class="podium-row" id="end-podium-row"></div>
-
   <div class="w-full">
     <h3 style="margin-bottom:10px">Final Leaderboard</h3>
     <div class="lb-list" id="end-lb-list"></div>
   </div>
-
-  <div class="card text-center" style="width:100%">
+  <div class="card" style="text-align:center;width:100%">
     <div style="font-size:2rem;margin-bottom:8px">🎉</div>
     <div style="font-family:'Oswald',sans-serif;font-size:1.5rem;font-weight:700;color:var(--gold)">Thanks for Playing Office Feud!</div>
     <div style="color:var(--gray);margin-top:8px;font-size:0.95rem">You're all stars — see you at the next one! 🚀</div>
   </div>
-
-  <button class="btn btn-outline" onclick="window.print()">📄 Save/Print Results</button>
+  <div id="end-mod-reset" style="display:none;width:100%">
+    <button class="btn btn-danger" onclick="openResetModal()">🔄 Reset for New Game</button>
+  </div>
+  <button class="btn btn-outline" onclick="window.print()">📄 Save / Print Results</button>
   <div class="spacer"></div>
 </div>
 
 <script>
-// ============================================================
-// CONFIGURATION — REPLACE THESE WITH YOUR SUPABASE CREDENTIALS
-// ============================================================
-const SUPABASE_URL = 'https://bphqkqgtsocoebfywftf.supabase.co';
+// ================================================================
+// ⚙️  CONFIG — REPLACE THESE TWO VALUES
+// ================================================================
+const SUPABASE_URL      = 'https://bphqkqgtsocoebfywftf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_BYQ5H1Q0zwHrYDXOsOc43Q_U3dkJDf4';
-const MOD_PASSWORD = 'OFFICEFEUD2025';
-// ============================================================
+const MOD_PASSWORD      = 'OFFICEFEUD2025';
+const Q_TIME            = 15;
+// ================================================================
 
-// ============================================================
-// QUESTIONS DATA
-// ============================================================
+// ── QUESTIONS ───────────────────────────────────────────────────
 const QUESTIONS = [
-  {
-    q: "Name the most-used emoji in your work Slack or Teams chat.",
-    answers: [
-      { text: "👍 Thumbs Up", score: 18 },
-      { text: "😂 Laughing Face", score: 9 },
-      { text: "🙏 Folded Hands", score: 7 },
-      { text: "🔥 Fire", score: 5 },
-      { text: "❤️ Heart", score: 4 },
-      { text: "👀 Eyes", score: 3 },
-      { text: "✅ Check Mark", score: 2 },
-      { text: "🎉 Party Popper", score: 2 }
-    ]
-  },
-  {
-    q: "Name the first thing you do when you log in for work in the morning.",
-    answers: [
-      { text: "Check Slack/Teams", score: 19 },
-      { text: "Check Email", score: 13 },
-      { text: "Look at my Calendar", score: 8 },
-      { text: "Check Task Manager", score: 4 },
-      { text: "Open Dashboards", score: 3 },
-      { text: "Scroll LinkedIn", score: 1 },
-      { text: "Make Coffee First", score: 1 },
-      { text: "Check colleague status", score: 1 }
-    ]
-  },
-  {
-    q: "Name something people do during a boring video call.",
-    answers: [
-      { text: "Browse their phone", score: 17 },
-      { text: "Check emails", score: 12 },
-      { text: "Online shopping", score: 7 },
-      { text: "Mute and talk to someone", score: 5 },
-      { text: "Scroll social media", score: 4 },
-      { text: "Doodle / take fake notes", score: 3 },
-      { text: "Watch something else", score: 1 },
-      { text: "Order food", score: 1 }
-    ]
-  },
-  {
-    q: "Name a phrase used way too much in meetings.",
-    answers: [
-      { text: "Let's take this offline", score: 16 },
-      { text: "Can everyone hear me?", score: 11 },
-      { text: "Circle back", score: 9 },
-      { text: "Quick sync", score: 5 },
-      { text: "Move the needle", score: 4 },
-      { text: "Bandwidth", score: 3 },
-      { text: "Align on this", score: 1 },
-      { text: "At the end of the day", score: 1 }
-    ]
-  },
-  {
-    q: "Name a reason someone is late to a virtual meeting.",
-    answers: [
-      { text: "Previous meeting ran long", score: 20 },
-      { text: "Forgot about it", score: 11 },
-      { text: "Couldn't find the link", score: 8 },
-      { text: "Internet/tech issues", score: 5 },
-      { text: "Kids or home interruption", score: 3 },
-      { text: "Wrong time zone", score: 1 },
-      { text: "Was on another call", score: 1 },
-      { text: "Getting coffee", score: 1 }
-    ]
-  },
-  {
-    q: "Name something that always goes wrong on a video call.",
-    answers: [
-      { text: "Mic is muted", score: 18 },
-      { text: "Internet drops", score: 12 },
-      { text: "Echo or feedback", score: 7 },
-      { text: "Camera won't turn on", score: 5 },
-      { text: "Screen share doesn't work", score: 4 },
-      { text: "Background noise", score: 2 },
-      { text: "Someone freezes", score: 1 },
-      { text: "Wrong window shared", score: 1 }
-    ]
-  },
-  {
-    q: "Name the most overused word in marketing.",
-    answers: [
-      { text: "Synergy", score: 14 },
-      { text: "Disruptive", score: 11 },
-      { text: "Leverage", score: 9 },
-      { text: "Authentic", score: 6 },
-      { text: "Scalable", score: 5 },
-      { text: "Data-driven", score: 3 },
-      { text: "Holistic", score: 1 },
-      { text: "Pivot", score: 1 }
-    ]
-  },
-  {
-    q: "Name your go-to work-from-home snack.",
-    answers: [
-      { text: "Chips", score: 16 },
-      { text: "Coffee/Tea", score: 12 },
-      { text: "Nuts", score: 8 },
-      { text: "Biscuits/Cookies", score: 6 },
-      { text: "Fruit", score: 4 },
-      { text: "Chocolate", score: 2 },
-      { text: "Bread/Toast", score: 1 },
-      { text: "Protein bar", score: 1 }
-    ]
-  },
-  {
-    q: "Name the biggest distraction when working from home.",
-    answers: [
-      { text: "Phone/social media", score: 18 },
-      { text: "Family or kids", score: 14 },
-      { text: "TV in the background", score: 7 },
-      { text: "Pets", score: 5 },
-      { text: "Household chores", score: 3 },
-      { text: "Delivery/doorbell", score: 1 },
-      { text: "Neighbors", score: 1 },
-      { text: "Napping", score: 1 }
-    ]
-  },
-  {
-    q: "Name the best part about working remotely.",
-    answers: [
-      { text: "No commute", score: 20 },
-      { text: "Work in pajamas", score: 12 },
-      { text: "Flexible hours", score: 8 },
-      { text: "More family time", score: 5 },
-      { text: "Better focus", score: 2 },
-      { text: "Home-cooked food", score: 1 },
-      { text: "No office politics", score: 1 },
-      { text: "My own music", score: 1 }
-    ]
-  },
-  {
-    q: "Name something people fake on video calls.",
-    answers: [
-      { text: "Paying attention", score: 19 },
-      { text: "Laughing at the right time", score: 11 },
-      { text: "Taking notes", score: 8 },
-      { text: "Bad internet to avoid speaking", score: 5 },
-      { text: "Looking busy", score: 4 },
-      { text: "Smiling", score: 1 },
-      { text: "Being about to reply", score: 1 },
-      { text: "Enthusiasm", score: 1 }
-    ]
-  },
-  {
-    q: "Name a type of meeting that could have been an email.",
-    answers: [
-      { text: "Status update call", score: 19 },
-      { text: "Weekly team standup", score: 13 },
-      { text: "Quick alignment call", score: 8 },
-      { text: "Monday morning all-hands", score: 5 },
-      { text: "Project kickoff", score: 2 },
-      { text: "Retrospective", score: 1 },
-      { text: "Reporting meeting", score: 1 },
-      { text: "One-on-one catch-up", score: 1 }
-    ]
-  },
-  {
-    q: "Name something on your work desk right now.",
-    answers: [
-      { text: "Coffee mug", score: 17 },
-      { text: "Notebook/Notepad", score: 12 },
-      { text: "Phone", score: 8 },
-      { text: "Headphones", score: 6 },
-      { text: "Water bottle", score: 4 },
-      { text: "Sticky notes", score: 1 },
-      { text: "Charger/cables", score: 1 },
-      { text: "A snack", score: 1 }
-    ]
-  },
-  {
-    q: "Name a Slack/Teams reaction you use all the time.",
-    answers: [
-      { text: "👍 Thumbs Up", score: 17 },
-      { text: "❤️ Heart", score: 10 },
-      { text: "😂 Laugh", score: 8 },
-      { text: "🎉 Tada", score: 6 },
-      { text: "👀 Eyes", score: 4 },
-      { text: "🔥 Fire", score: 3 },
-      { text: "✅ Check", score: 1 },
-      { text: "🙌 Raising Hands", score: 1 }
-    ]
-  },
-  {
-    q: "Name what you do in the last 5 minutes before logging off.",
-    answers: [
-      { text: "Check Slack one last time", score: 16 },
-      { text: "Update task manager", score: 11 },
-      { text: "Send a final email", score: 9 },
-      { text: "Close all 47 tabs", score: 6 },
-      { text: "Write tomorrow's plan", score: 4 },
-      { text: "Ghost everyone 👻", score: 2 },
-      { text: "Say bye on Slack", score: 1 },
-      { text: "Just close the laptop", score: 1 }
-    ]
-  },
-  {
-    q: "Name the marketing metric teams obsess over the most.",
-    answers: [
-      { text: "ROI", score: 17 },
-      { text: "Conversion rate", score: 12 },
-      { text: "CTR (Click-through rate)", score: 8 },
-      { text: "CAC (Customer Acquisition Cost)", score: 6 },
-      { text: "Revenue/Sales", score: 4 },
-      { text: "Impressions", score: 1 },
-      { text: "Engagement rate", score: 1 },
-      { text: "Bounce rate", score: 1 }
-    ]
-  },
-  {
-    q: "Name a tool that sends you way too many notifications.",
-    answers: [
-      { text: "Slack", score: 21 },
-      { text: "Email/Outlook", score: 13 },
-      { text: "Jira", score: 7 },
-      { text: "Asana", score: 4 },
-      { text: "Google Calendar", score: 2 },
-      { text: "LinkedIn", score: 1 },
-      { text: "Teams", score: 1 },
-      { text: "Notion", score: 1 }
-    ]
-  },
-  {
-    q: "Name something you'd add to your home office if money were no object.",
-    answers: [
-      { text: "Better chair/standing desk", score: 17 },
-      { text: "Bigger/multiple monitors", score: 12 },
-      { text: "Better lighting/ring light", score: 8 },
-      { text: "Faster internet", score: 6 },
-      { text: "A coffee machine", score: 4 },
-      { text: "Soundproofing", score: 1 },
-      { text: "A treadmill", score: 1 },
-      { text: "A dedicated room", score: 1 }
-    ]
-  },
-  {
-    q: "Name something that happens the moment you say 'I have no meetings today.'",
-    answers: [
-      { text: "A meeting gets added", score: 21 },
-      { text: "Someone pings for a quick call", score: 14 },
-      { text: "An urgent Slack message", score: 7 },
-      { text: "A deadline appears", score: 4 },
-      { text: "Manager asks for catch-up", score: 2 },
-      { text: "A fire drill begins", score: 1 },
-      { text: "Calendar invite comes instantly", score: 1 },
-      { text: "Someone asks 'can we hop on a call?'", score: 0 }
-    ]
-  },
-  {
-    q: "Name the first thing you do after logging off from work.",
-    answers: [
-      { text: "Watch TV/Netflix", score: 16 },
-      { text: "Make/eat dinner", score: 12 },
-      { text: "Go for a walk", score: 9 },
-      { text: "Scroll social media", score: 6 },
-      { text: "Exercise/gym", score: 4 },
-      { text: "Spend time with family", score: 1 },
-      { text: "Nap", score: 1 },
-      { text: "Check email one more time 😅", score: 1 }
-    ]
-  }
+  {q:"Name the most-used emoji in your work Slack or Teams chat.",answers:[{text:"👍 Thumbs Up",score:18},{text:"😂 Laughing Face",score:9},{text:"🙏 Folded Hands",score:7},{text:"🔥 Fire",score:5},{text:"❤️ Heart",score:4},{text:"👀 Eyes",score:3},{text:"✅ Check Mark",score:2},{text:"🎉 Party Popper",score:2}]},
+  {q:"Name the first thing you do when you log in for work in the morning.",answers:[{text:"Check Slack/Teams",score:19},{text:"Check Email",score:13},{text:"Look at my Calendar",score:8},{text:"Check Task Manager",score:4},{text:"Open Dashboards",score:3},{text:"Scroll LinkedIn",score:1},{text:"Make Coffee First",score:1},{text:"Check colleague status",score:1}]},
+  {q:"Name something people do during a boring video call.",answers:[{text:"Browse their phone",score:17},{text:"Check emails",score:12},{text:"Online shopping",score:7},{text:"Mute & talk to someone",score:5},{text:"Scroll social media",score:4},{text:"Doodle / take fake notes",score:3},{text:"Watch something else",score:1},{text:"Order food",score:1}]},
+  {q:"Name a phrase used way too much in meetings.",answers:[{text:"Let's take this offline",score:16},{text:"Can everyone hear me?",score:11},{text:"Circle back",score:9},{text:"Quick sync",score:5},{text:"Move the needle",score:4},{text:"Bandwidth",score:3},{text:"Align on this",score:1},{text:"At the end of the day",score:1}]},
+  {q:"Name a reason someone is late to a virtual meeting.",answers:[{text:"Previous meeting ran long",score:20},{text:"Forgot about it",score:11},{text:"Couldn't find the link",score:8},{text:"Internet/tech issues",score:5},{text:"Kids or home interruption",score:3},{text:"Wrong time zone",score:1},{text:"Was on another call",score:1},{text:"Getting coffee",score:1}]},
+  {q:"Name something that always goes wrong on a video call.",answers:[{text:"Mic is muted",score:18},{text:"Internet drops",score:12},{text:"Echo or feedback",score:7},{text:"Camera won't turn on",score:5},{text:"Screen share doesn't work",score:4},{text:"Background noise",score:2},{text:"Someone freezes",score:1},{text:"Wrong window shared",score:1}]},
+  {q:"Name the most overused word in marketing.",answers:[{text:"Synergy",score:14},{text:"Disruptive",score:11},{text:"Leverage",score:9},{text:"Authentic",score:6},{text:"Scalable",score:5},{text:"Data-driven",score:3},{text:"Holistic",score:1},{text:"Pivot",score:1}]},
+  {q:"Name your go-to work-from-home snack.",answers:[{text:"Chips",score:16},{text:"Coffee/Tea",score:12},{text:"Nuts",score:8},{text:"Biscuits/Cookies",score:6},{text:"Fruit",score:4},{text:"Chocolate",score:2},{text:"Bread/Toast",score:1},{text:"Protein bar",score:1}]},
+  {q:"Name the biggest distraction when working from home.",answers:[{text:"Phone/social media",score:18},{text:"Family or kids",score:14},{text:"TV in the background",score:7},{text:"Pets",score:5},{text:"Household chores",score:3},{text:"Delivery/doorbell",score:1},{text:"Neighbors",score:1},{text:"Napping",score:1}]},
+  {q:"Name the best part about working remotely.",answers:[{text:"No commute",score:20},{text:"Work in pajamas",score:12},{text:"Flexible hours",score:8},{text:"More family time",score:5},{text:"Better focus",score:2},{text:"Home-cooked food",score:1},{text:"No office politics",score:1},{text:"My own music",score:1}]},
+  {q:"Name something people fake on video calls.",answers:[{text:"Paying attention",score:19},{text:"Laughing at the right time",score:11},{text:"Taking notes",score:8},{text:"Bad internet to avoid speaking",score:5},{text:"Looking busy",score:4},{text:"Smiling",score:1},{text:"Being about to reply",score:1},{text:"Enthusiasm",score:1}]},
+  {q:"Name a type of meeting that could have been an email.",answers:[{text:"Status update call",score:19},{text:"Weekly team standup",score:13},{text:"Quick alignment call",score:8},{text:"Monday morning all-hands",score:5},{text:"Project kickoff",score:2},{text:"Retrospective",score:1},{text:"Reporting meeting",score:1},{text:"One-on-one catch-up",score:1}]},
+  {q:"Name something on your work desk right now.",answers:[{text:"Coffee mug",score:17},{text:"Notebook/Notepad",score:12},{text:"Phone",score:8},{text:"Headphones",score:6},{text:"Water bottle",score:4},{text:"Sticky notes",score:1},{text:"Charger/cables",score:1},{text:"A snack",score:1}]},
+  {q:"Name a Slack/Teams reaction you use all the time.",answers:[{text:"👍 Thumbs Up",score:17},{text:"❤️ Heart",score:10},{text:"😂 Laugh",score:8},{text:"🎉 Tada",score:6},{text:"👀 Eyes",score:4},{text:"🔥 Fire",score:3},{text:"✅ Check",score:1},{text:"🙌 Raising Hands",score:1}]},
+  {q:"Name what you do in the last 5 minutes before logging off.",answers:[{text:"Check Slack one last time",score:16},{text:"Update task manager",score:11},{text:"Send a final email",score:9},{text:"Close all 47 tabs",score:6},{text:"Write tomorrow's plan",score:4},{text:"Ghost everyone 👻",score:2},{text:"Say bye on Slack",score:1},{text:"Just close the laptop",score:1}]},
+  {q:"Name the marketing metric teams obsess over the most.",answers:[{text:"ROI",score:17},{text:"Conversion rate",score:12},{text:"CTR (Click-through rate)",score:8},{text:"CAC (Acquisition Cost)",score:6},{text:"Revenue/Sales",score:4},{text:"Impressions",score:1},{text:"Engagement rate",score:1},{text:"Bounce rate",score:1}]},
+  {q:"Name a tool that sends you way too many notifications.",answers:[{text:"Slack",score:21},{text:"Email/Outlook",score:13},{text:"Jira",score:7},{text:"Asana",score:4},{text:"Google Calendar",score:2},{text:"LinkedIn",score:1},{text:"Teams",score:1},{text:"Notion",score:1}]},
+  {q:"Name something you'd add to your home office if money were no object.",answers:[{text:"Better chair/standing desk",score:17},{text:"Bigger/multiple monitors",score:12},{text:"Better lighting/ring light",score:8},{text:"Faster internet",score:6},{text:"A coffee machine",score:4},{text:"Soundproofing",score:1},{text:"A treadmill",score:1},{text:"A dedicated room",score:1}]},
+  {q:"Name something that happens the moment you say 'I have no meetings today.'",answers:[{text:"A meeting gets added",score:21},{text:"Someone pings for a quick call",score:14},{text:"An urgent Slack message",score:7},{text:"A deadline appears",score:4},{text:"Manager asks for catch-up",score:2},{text:"A fire drill begins",score:1},{text:"Calendar invite comes instantly",score:1},{text:"'Can we hop on a call?'",score:0}]},
+  {q:"Name the first thing you do after logging off from work.",answers:[{text:"Watch TV/Netflix",score:16},{text:"Make/eat dinner",score:12},{text:"Go for a walk",score:9},{text:"Scroll social media",score:6},{text:"Exercise/gym",score:4},{text:"Spend time with family",score:1},{text:"Nap",score:1},{text:"Check email one more time 😅",score:1}]}
 ];
 
-// ============================================================
-// APP STATE
-// ============================================================
-let sb;
-let playerName = null;
-let isModerator = false;
-let playerScore = 0;
-let currentGameState = null;
-let timerInterval = null;
-let hasAnswered = false;
-let myAnswerIndex = -1;
-let myEarnedThisQ = 0;
-let prevLeaderboard = [];
-let gameChannel = null;
+// ── STATE ────────────────────────────────────────────────────────
+let sb, playerName=null, isModerator=false, playerScore=0;
+let currentGameState=null, timerInterval=null;
+let hasAnswered=false, myAnswerIndex=-1, myEarnedThisQ=0;
+let prevLeaderboard=[], mainChannel=null;
+let isSubmitting=false;  // prevents double-tap race condition
 
-// ============================================================
-// INIT
-// ============================================================
+// ── INIT ─────────────────────────────────────────────────────────
 async function init() {
   if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
-    showMsg('login-msg', '⚠️ Please configure your Supabase URL and key in the source code!', 'error');
+    showMsg('login-msg', '⚠️ Open this HTML file and replace YOUR_SUPABASE_URL and YOUR_SUPABASE_ANON_KEY with your Supabase credentials.', 'error');
     return;
   }
-  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  // Single Supabase client with generous realtime timeout
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    realtime: { timeout: 30000 }
+  });
 
-  // Check for saved session
-  const savedName = localStorage.getItem('officefeud_name');
-  const savedMod = localStorage.getItem('officefeud_mod') === 'true';
-  if (savedName) {
-    const { data } = await sb.from('players').select('*').eq('name', savedName).maybeSingle();
-    if (data) {
-      playerName = data.name;
-      isModerator = data.is_moderator;
-      playerScore = data.score || 0;
-      subscribeToAll();
-      await syncCurrentState();
-      return;
-    }
+  // Attempt session restore on page refresh
+  const saved = localStorage.getItem('officefeud_name');
+  if (saved) {
+    try {
+      const { data } = await sb.from('players').select('*').eq('name', saved).maybeSingle();
+      if (data) {
+        playerName=data.name; isModerator=data.is_moderator; playerScore=data.score||0;
+        subscribeToAll();
+        await syncCurrentState();
+        return;
+      }
+    } catch(_) {}
   }
   showScreen('login');
 }
 
-// ============================================================
-// LOGIN
-// ============================================================
+// ── LOGIN ────────────────────────────────────────────────────────
 document.getElementById('mod-check').addEventListener('change', function() {
   document.getElementById('mod-pw-wrap').style.display = this.checked ? 'block' : 'none';
 });
-
-document.getElementById('name-input').addEventListener('keyup', function(e) {
-  if (e.key === 'Enter') handleLogin();
-});
+document.getElementById('name-input').addEventListener('keyup', e => { if(e.key==='Enter') handleLogin(); });
+document.getElementById('mod-pw').addEventListener('keyup',    e => { if(e.key==='Enter') handleLogin(); });
 
 async function handleLogin() {
-  const nameRaw = document.getElementById('name-input').value.trim();
-  const isModCheck = document.getElementById('mod-check').checked;
-  const modPw = document.getElementById('mod-pw').value;
-  const msgEl = document.getElementById('login-msg');
+  const btn = document.getElementById('join-btn');
+  if (btn.disabled) return;
 
-  if (!nameRaw || nameRaw.length < 2) {
-    showMsg('login-msg', 'Please enter at least 2 characters for your name.', 'error'); return;
-  }
-  if (nameRaw.length > 30) {
-    showMsg('login-msg', 'Name too long (max 30 characters).', 'error'); return;
-  }
+  const name    = document.getElementById('name-input').value.trim();
+  const isMod   = document.getElementById('mod-check').checked;
+  const pw      = document.getElementById('mod-pw').value;
 
-  if (isModCheck && modPw !== MOD_PASSWORD) {
-    showMsg('login-msg', '❌ Wrong moderator password!', 'error'); return;
-  }
+  if (!name || name.length < 2) { showMsg('login-msg','Please enter at least 2 characters.','error'); return; }
+  if (name.length > 30)          { showMsg('login-msg','Name too long (max 30 characters).','error'); return; }
+  if (isMod && pw !== MOD_PASSWORD) { showMsg('login-msg','❌ Wrong moderator password!','error'); return; }
 
-  // Check if moderator slot taken
-  if (isModCheck) {
-    const { data: existingMod } = await sb.from('players').select('id').eq('is_moderator', true).maybeSingle();
-    if (existingMod) {
-      showMsg('login-msg', '❌ Moderator seat is already taken!', 'error'); return;
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Joining...';
+  showMsg('login-msg','','info');
+
+  try {
+    if (isMod) {
+      const { data:em } = await sb.from('players').select('id').eq('is_moderator',true).maybeSingle();
+      if (em) { showMsg('login-msg','❌ Moderator seat is taken!','error'); resetJoinBtn(); return; }
     }
+    const { data:ex } = await sb.from('players').select('id').eq('name',name).maybeSingle();
+    if (ex) { showMsg('login-msg',"😄 That name's taken! Pick another.","error"); resetJoinBtn(); return; }
+
+    const { error } = await sb.from('players').insert({ name, score:0, is_moderator:isMod });
+    if (error) throw error;
+
+    playerName=name; isModerator=isMod; playerScore=0;
+    localStorage.setItem('officefeud_name', name);
+    localStorage.setItem('officefeud_mod',  String(isMod));
+    subscribeToAll();
+    await syncCurrentState();
+  } catch(err) {
+    showMsg('login-msg','❌ '+(err.message||'Could not join. Try again.'),'error');
+    resetJoinBtn();
   }
-
-  // Check unique name
-  const { data: existing } = await sb.from('players').select('id').eq('name', nameRaw).maybeSingle();
-  if (existing) {
-    showMsg('login-msg', "😄 That name's taken! Pick another one.", 'error'); return;
-  }
-
-  // Insert player
-  const { error } = await sb.from('players').insert({
-    name: nameRaw,
-    score: 0,
-    is_moderator: isModCheck
-  });
-
-  if (error) {
-    showMsg('login-msg', '❌ Error joining: ' + error.message, 'error'); return;
-  }
-
-  playerName = nameRaw;
-  isModerator = isModCheck;
-  playerScore = 0;
-  localStorage.setItem('officefeud_name', playerName);
-  localStorage.setItem('officefeud_mod', String(isModerator));
-
-  subscribeToAll();
-  await syncCurrentState();
+}
+function resetJoinBtn() {
+  const b = document.getElementById('join-btn');
+  b.disabled=false; b.innerHTML='Join the Game →';
 }
 
-// ============================================================
-// REAL-TIME SUBSCRIPTIONS
-// ============================================================
+// ── REALTIME ─────────────────────────────────────────────────────
+// KEY FIX: ONE channel for all subscriptions → 50 players = 50 total connections
+// (vs 100+ with 2 channels each). Supabase free tier allows 200 concurrent.
 function subscribeToAll() {
-  // Subscribe to game_state changes
-  gameChannel = sb.channel('office-feud-game')
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state', filter: 'id=eq.1' },
-      payload => { handleGameStateChange(payload.new); })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'players' },
-      () => { refreshPlayerList(); updateOnlineCount(); })
-    .subscribe();
+  if (mainChannel) { try { sb.removeChannel(mainChannel); } catch(_){} mainChannel=null; }
 
-  // Subscribe to answers for moderator count
-  sb.channel('answers-channel')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'answers' },
-      () => { if (isModerator) updateAnsweredCount(); })
-    .subscribe();
+  mainChannel = sb.channel('office-feud-v2')
+    .on('postgres_changes', { event:'UPDATE', schema:'public', table:'game_state', filter:'id=eq.1' },
+        p => handleGameStateChange(p.new))
+    .on('postgres_changes', { event:'*', schema:'public', table:'players' },
+        () => { refreshPlayerList(); updateOnlineCount(); })
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'answers' },
+        () => { if(isModerator) updateAnsweredCount(); })
+    .subscribe(status => {
+      const lost = status==='CHANNEL_ERROR' || status==='TIMED_OUT';
+      document.getElementById('conn-bar').classList.toggle('show', lost);
+      document.getElementById('online-dot').classList.toggle('red', lost);
+      // Auto-reconnect on failure
+      if (lost) setTimeout(() => subscribeToAll(), 3500);
+    });
 }
 
 async function syncCurrentState() {
-  const { data } = await sb.from('game_state').select('*').eq('id', 1).maybeSingle();
-  if (data) handleGameStateChange(data);
-  else showScreen('lobby');
-  updateOnlineCount();
+  try {
+    const { data } = await sb.from('game_state').select('*').eq('id',1).maybeSingle();
+    if (data) await handleGameStateChange(data); else showScreen('lobby');
+    updateOnlineCount();
+  } catch(_) { showScreen('lobby'); }
 }
 
-// ============================================================
-// GAME STATE MACHINE
-// ============================================================
+// ── GAME STATE MACHINE ───────────────────────────────────────────
 async function handleGameStateChange(state) {
   currentGameState = state;
-  const phase = state.phase;
-  const qIdx = state.current_question || 0;
+  const { phase, current_question:qIdx=0 } = state;
 
   if (phase === 'lobby') {
-    showScreen('lobby');
-    refreshPlayerList();
+    showScreen('lobby'); refreshPlayerList();
+
   } else if (phase === 'question') {
-    hasAnswered = false;
-    myAnswerIndex = -1;
-    myEarnedThisQ = 0;
-    // Check if already answered this question
-    const { data: existingAns } = await sb.from('answers')
-      .select('*').eq('player_name', playerName).eq('question_index', qIdx).maybeSingle();
-    if (existingAns) {
-      hasAnswered = true;
-      myAnswerIndex = existingAns.answer_index;
-      myEarnedThisQ = existingAns.multiplied_score;
-    }
+    // Always re-check DB for this question to handle reconnects correctly
+    try {
+      const { data:a } = await sb.from('answers').select('*')
+        .eq('player_name',playerName).eq('question_index',qIdx).maybeSingle();
+      if (a) { hasAnswered=true; myAnswerIndex=a.answer_index; myEarnedThisQ=a.multiplied_score; }
+      else   { hasAnswered=false; myAnswerIndex=-1; myEarnedThisQ=0; }
+    } catch(_) { hasAnswered=false; myAnswerIndex=-1; myEarnedThisQ=0; }
+    isSubmitting = false;
     renderQuestionScreen(qIdx, state.question_start_time);
+
   } else if (phase === 'reveal') {
-    stopTimer();
-    renderRevealScreen(qIdx);
+    stopTimer(); await renderRevealScreen(qIdx);
   } else if (phase === 'leaderboard') {
-    renderLeaderboardScreen(qIdx);
+    await renderLeaderboardScreen(qIdx);
   } else if (phase === 'end') {
-    renderEndScreen();
+    await renderEndScreen();
   }
 }
 
-// ============================================================
-// LOBBY
-// ============================================================
+// ── LOBBY ────────────────────────────────────────────────────────
 async function refreshPlayerList() {
   if (!document.getElementById('screen-lobby').classList.contains('active')) return;
-  const { data } = await sb.from('players').select('*').order('joined_at');
-  if (!data) return;
-  const count = data.length;
-  document.getElementById('lobby-player-count').textContent = count;
-
-  const list = document.getElementById('lobby-players-list');
-  list.innerHTML = data.map(p =>
-    `<div class="player-chip ${p.is_moderator ? 'mod' : ''}">${escHtml(p.name)}${p.is_moderator ? ' 🎤' : ''}</div>`
-  ).join('');
-
-  document.getElementById('lobby-mod-btn').style.display = isModerator ? 'block' : 'none';
-  document.getElementById('lobby-wait-msg').style.display = isModerator ? 'none' : 'block';
+  try {
+    const { data } = await sb.from('players').select('*').order('joined_at');
+    if (!data) return;
+    document.getElementById('lobby-player-count').textContent = data.length;
+    document.getElementById('lobby-players-list').innerHTML = data.map(p =>
+      `<div class="player-chip ${p.is_moderator?'mod':''}">${escHtml(p.name)}${p.is_moderator?' 🎤':''}</div>`
+    ).join('');
+  } catch(_) {}
+  document.getElementById('lobby-mod-controls').style.display = isModerator ? 'flex' : 'none';
+  document.getElementById('lobby-wait-msg').style.display     = isModerator ? 'none'  : 'block';
 }
 
 async function startGame() {
-  await sb.from('game_state').update({
-    phase: 'question',
-    current_question: 0,
-    question_start_time: new Date().toISOString()
-  }).eq('id', 1);
+  const btn = document.getElementById('start-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Starting...';
+  try {
+    hasAnswered=false; myAnswerIndex=-1; myEarnedThisQ=0;
+    await sb.from('game_state').update({
+      phase:'question', current_question:0,
+      question_start_time: new Date().toISOString()
+    }).eq('id',1);
+  } catch(_) { btn.disabled=false; btn.innerHTML='🚀 Start Game!'; showToast('❌ Could not start. Try again.'); }
 }
 
-// ============================================================
-// QUESTION SCREEN
-// ============================================================
+// ── RESET ────────────────────────────────────────────────────────
+function openResetModal()  { document.getElementById('reset-modal').classList.add('show'); document.getElementById('reset-modal-msg').innerHTML=''; document.getElementById('reset-confirm-btn').disabled=false; document.getElementById('reset-confirm-btn').innerHTML='Yes, Reset Everything'; }
+function closeResetModal() { document.getElementById('reset-modal').classList.remove('show'); }
+
+async function confirmReset() {
+  const btn = document.getElementById('reset-confirm-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Resetting...';
+  try {
+    // Wipe all data — .neq trick deletes all rows without needing RLS bypass
+    await sb.from('answers').delete().neq('id','00000000-0000-0000-0000-000000000000');
+    await sb.from('players').delete().neq('id','00000000-0000-0000-0000-000000000000');
+    await sb.from('game_state').update({
+      phase:'lobby', current_question:0,
+      question_start_time: new Date().toISOString()
+    }).eq('id',1);
+
+    // Clear local state
+    localStorage.removeItem('officefeud_name');
+    localStorage.removeItem('officefeud_mod');
+    playerName=null; isModerator=false; playerScore=0;
+    hasAnswered=false; myAnswerIndex=-1; prevLeaderboard=[]; isSubmitting=false;
+
+    closeResetModal();
+    showToast('✅ Game reset! All players must rejoin.');
+    setTimeout(() => window.location.reload(), 900);
+  } catch(err) {
+    document.getElementById('reset-modal-msg').innerHTML = `<div class="msg msg-error">❌ ${escHtml(err.message)}</div>`;
+    btn.disabled=false; btn.innerHTML='Yes, Reset Everything';
+  }
+}
+
+// ── QUESTION SCREEN ───────────────────────────────────────────────
 function renderQuestionScreen(qIdx, startTimeStr) {
   showScreen('question');
   const q = QUESTIONS[qIdx];
-  document.getElementById('q-num').textContent = qIdx + 1;
+  document.getElementById('q-num').textContent   = qIdx+1;
   document.getElementById('q-score').textContent = playerScore;
-  document.getElementById('q-text').textContent = q.q;
+  document.getElementById('q-text').textContent  = q.q;
 
-  // Render answer buttons
-  const grid = document.getElementById('answers-grid');
-  grid.innerHTML = q.answers.map((a, i) =>
-    `<button class="ans-btn ${hasAnswered && myAnswerIndex === i ? 'selected' : ''}"
-      id="ans-${i}"
-      onclick="selectAnswer(${i})"
-      ${hasAnswered ? 'disabled' : ''}
-    >${escHtml(a.text)}</button>`
+  document.getElementById('answers-grid').innerHTML = q.answers.map((a,i) =>
+    `<button class="ans-btn ${hasAnswered && myAnswerIndex===i ? 'selected':''}"
+       id="ans-${i}" onclick="selectAnswer(${i})"
+       ${hasAnswered?'disabled':''}>${escHtml(a.text)}</button>`
   ).join('');
 
-  document.getElementById('locked-msg').style.display = hasAnswered ? 'flex' : 'none';
+  document.getElementById('locked-msg').style.display        = hasAnswered ? 'flex' : 'none';
   document.getElementById('mod-answer-status').style.display = isModerator ? 'flex' : 'none';
   if (isModerator) updateAnsweredCount();
 
-  startTimer(startTimeStr);
+  // If player joined mid-question and timer already expired
+  const elapsed = (Date.now() - new Date(startTimeStr).getTime()) / 1000;
+  if (elapsed >= Q_TIME && !hasAnswered) { disableAllAnswers(); }
+  else { startTimer(startTimeStr); }
 }
 
 function startTimer(startTimeStr) {
   stopTimer();
-  const TOTAL = 15;
-  const arc = document.getElementById('timer-arc');
-  const numEl = document.getElementById('timer-num');
-  const circumference = 226;
-
+  const CIRC=226, arc=document.getElementById('timer-arc'), num=document.getElementById('timer-num');
   function tick() {
-    const elapsed = (Date.now() - new Date(startTimeStr).getTime()) / 1000;
-    const remaining = Math.max(0, TOTAL - elapsed);
-    const secs = Math.ceil(remaining);
-
-    numEl.textContent = secs;
-    arc.style.strokeDashoffset = circumference * (1 - remaining / TOTAL);
-
-    if (remaining <= 5) {
-      arc.classList.add('urgent');
-      numEl.classList.add('urgent');
-    } else {
-      arc.classList.remove('urgent');
-      numEl.classList.remove('urgent');
-    }
-
+    const elapsed   = (Date.now() - new Date(startTimeStr).getTime()) / 1000;
+    const remaining = Math.max(0, Q_TIME - elapsed);
+    num.textContent             = Math.ceil(remaining);
+    arc.style.strokeDashoffset  = CIRC*(1 - remaining/Q_TIME);
+    arc.classList.toggle('urgent', remaining <= 5);
+    num.classList.toggle('urgent',  remaining <= 5);
     if (remaining <= 0) {
       stopTimer();
-      if (!hasAnswered) {
-        // Auto lock with no answer (score 0)
-        lockAnswer(-1, 0, TOTAL);
+      if (!hasAnswered && !isSubmitting) {
+        hasAnswered=true; isSubmitting=true;
+        disableAllAnswers();
+        recordAnswer(-1, 0, Q_TIME).finally(() => isSubmitting=false);
       }
     }
   }
-
   tick();
-  timerInterval = setInterval(tick, 200);
+  timerInterval = setInterval(tick, 250); // 250ms: smooth enough, CPU-friendly at 50 clients
 }
 
-function stopTimer() {
-  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-}
+function stopTimer() { if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } }
+function disableAllAnswers() { document.querySelectorAll('.ans-btn').forEach(b=>b.disabled=true); document.getElementById('locked-msg').style.display='flex'; }
 
 async function selectAnswer(idx) {
-  if (hasAnswered) return;
+  if (hasAnswered || isSubmitting) return;
+  isSubmitting=true; hasAnswered=true;  // IMMEDIATELY block double-tap
+
   const elapsed = (Date.now() - new Date(currentGameState.question_start_time).getTime()) / 1000;
-  if (elapsed > 15) return;
+  if (elapsed >= Q_TIME) { isSubmitting=false; return; }
 
-  hasAnswered = true;
   myAnswerIndex = idx;
-  const q = QUESTIONS[currentGameState.current_question];
-  const rawScore = q.answers[idx].score;
+  const raw    = QUESTIONS[currentGameState.current_question].answers[idx].score;
+  const mult   = elapsed<=5 ? 1.1 : elapsed<=10 ? 1.05 : 1.0;
+  myEarnedThisQ = Math.round(raw * mult);
 
-  let multiplier = 1.0;
-  if (elapsed <= 5) multiplier = 1.1;
-  else if (elapsed <= 10) multiplier = 1.05;
-  const earned = Math.round(rawScore * multiplier);
-  myEarnedThisQ = earned;
-
-  await lockAnswer(idx, earned, elapsed);
-}
-
-async function lockAnswer(idx, earned, elapsed) {
-  const qIdx = currentGameState.current_question;
-
-  // Update UI immediately
-  const grid = document.getElementById('answers-grid');
-  const btns = grid.querySelectorAll('.ans-btn');
-  btns.forEach((b, i) => {
-    b.disabled = true;
-    if (i === idx) b.classList.add('selected');
-  });
-  document.getElementById('locked-msg').style.display = 'flex';
+  // Optimistic UI first — no waiting for DB
+  const btn = document.getElementById(`ans-${idx}`);
+  if (btn) btn.classList.add('selected');
+  disableAllAnswers();
   showToast('⚡ Answer locked in!');
 
-  if (idx === -1) {
-    // No answer (timeout)
-    await sb.from('answers').insert({
-      player_name: playerName,
+  await recordAnswer(idx, myEarnedThisQ, elapsed);
+  isSubmitting = false;
+}
+
+async function recordAnswer(idx, earned, elapsed) {
+  const qIdx = currentGameState.current_question;
+  try {
+    // UPSERT prevents duplicate rows if somehow called twice
+    await sb.from('answers').upsert({
+      player_name:    playerName,
       question_index: qIdx,
-      answer_index: -1,
-      raw_score: 0,
-      multiplied_score: 0,
-      time_taken: 15
-    });
-    return;
-  }
+      answer_index:   idx,
+      raw_score:      idx===-1 ? 0 : QUESTIONS[qIdx].answers[idx].score,
+      multiplied_score: earned,
+      time_taken:     Math.round(elapsed*10)/10
+    }, { onConflict:'player_name,question_index' });
 
-  const q = QUESTIONS[qIdx];
-  const rawScore = q.answers[idx].score;
-
-  // Update score in DB
-  const newScore = playerScore + earned;
-  playerScore = newScore;
-  document.getElementById('q-score').textContent = newScore;
-
-  await sb.from('answers').insert({
-    player_name: playerName,
-    question_index: qIdx,
-    answer_index: idx,
-    raw_score: rawScore,
-    multiplied_score: earned,
-    time_taken: Math.round(elapsed * 10) / 10
-  });
-  await sb.from('players').update({ score: newScore }).eq('name', playerName);
+    const newScore = playerScore + earned;
+    playerScore = newScore;
+    document.getElementById('q-score').textContent = playerScore;
+    // Update player score in DB — each player only writes their OWN row, no race condition
+    await sb.from('players').update({ score: newScore }).eq('name', playerName);
+  } catch(e) { console.warn('recordAnswer error:', e.message); }
 }
 
 async function updateAnsweredCount() {
   if (!currentGameState) return;
-  const qIdx = currentGameState.current_question;
-  const { count: answered } = await sb.from('answers').select('*', { count: 'exact', head: true }).eq('question_index', qIdx);
-  const { count: total } = await sb.from('players').select('*', { count: 'exact', head: true });
-  document.getElementById('answered-count').textContent = answered || 0;
-  document.getElementById('total-count').textContent = `/ ${total || 0} answered`;
+  try {
+    const qIdx = currentGameState.current_question;
+    const [r1, r2] = await Promise.all([
+      sb.from('answers').select('*',{count:'exact',head:true}).eq('question_index',qIdx),
+      sb.from('players').select('*',{count:'exact',head:true})
+    ]);
+    document.getElementById('answered-count').textContent = r1.count||0;
+    document.getElementById('total-count').textContent    = ` / ${r2.count||0} answered`;
+  } catch(_) {}
 }
 
 async function forceReveal() {
   stopTimer();
-  await moveToReveal(currentGameState.current_question);
+  try { await sb.from('game_state').update({ phase:'reveal', current_question:currentGameState.current_question }).eq('id',1); }
+  catch(_) { showToast('❌ Try again'); }
 }
 
-async function moveToReveal(qIdx) {
-  await sb.from('game_state').update({ phase: 'reveal', current_question: qIdx }).eq('id', 1);
-}
-
-// ============================================================
-// REVEAL SCREEN
-// ============================================================
+// ── REVEAL SCREEN ────────────────────────────────────────────────
 async function renderRevealScreen(qIdx) {
-  showScreen('reveal');
-  stopTimer();
-
+  showScreen('reveal'); stopTimer();
   const q = QUESTIONS[qIdx];
   document.getElementById('reveal-qtext').textContent = q.q;
 
-  // Fetch my answer for this question
-  if (myAnswerIndex === -1 || myEarnedThisQ === undefined) {
-    const { data: myAns } = await sb.from('answers')
-      .select('*').eq('player_name', playerName).eq('question_index', qIdx).maybeSingle();
-    if (myAns) { myAnswerIndex = myAns.answer_index; myEarnedThisQ = myAns.multiplied_score; }
+  // Sync answer from DB if not in memory (e.g. page refresh during reveal)
+  if (!hasAnswered) {
+    try {
+      const { data:a } = await sb.from('answers').select('*').eq('player_name',playerName).eq('question_index',qIdx).maybeSingle();
+      if (a) { myAnswerIndex=a.answer_index; myEarnedThisQ=a.multiplied_score; hasAnswered=true; }
+    } catch(_) {}
   }
 
-  // Fetch fresh player score
-  const { data: me } = await sb.from('players').select('score').eq('name', playerName).maybeSingle();
-  if (me) playerScore = me.score || 0;
+  // Sync score from DB as source of truth
+  try {
+    const { data:me } = await sb.from('players').select('score').eq('name',playerName).maybeSingle();
+    if (me) playerScore = me.score||0;
+  } catch(_) {}
   document.getElementById('reveal-total').textContent = playerScore;
 
   // My result
   const myResult = document.getElementById('my-result');
-  if (myAnswerIndex >= 0) {
-    const myAns = q.answers[myAnswerIndex];
-    document.getElementById('my-answer-text').textContent = myAns.text;
-    document.getElementById('my-earned').textContent = myEarnedThisQ || 0;
-    if (myAnswerIndex === 0) {
-      myResult.classList.add('correct-top');
-      document.getElementById('top-answer-badge').style.display = 'inline-block';
-      launchConfetti(30);
-    } else {
-      myResult.classList.remove('correct-top');
-      document.getElementById('top-answer-badge').style.display = 'none';
-    }
+  if (myAnswerIndex >= 0 && myAnswerIndex < q.answers.length) {
+    document.getElementById('my-answer-text').textContent = q.answers[myAnswerIndex].text;
+    document.getElementById('my-earned').textContent      = myEarnedThisQ||0;
+    const top = myAnswerIndex===0;
+    myResult.classList.toggle('correct-top', top);
+    document.getElementById('top-answer-badge').style.display = top ? 'inline-block':'none';
+    if (top) launchConfetti(30);
   } else {
-    document.getElementById('my-answer-text').textContent = '(No answer)';
-    document.getElementById('my-earned').textContent = 0;
+    document.getElementById('my-answer-text').textContent = '(No answer — time ran out)';
+    document.getElementById('my-earned').textContent      = 0;
     myResult.classList.remove('correct-top');
     document.getElementById('top-answer-badge').style.display = 'none';
   }
 
-  // Build feud board
-  const board = document.getElementById('feud-board');
-  const maxScore = q.answers[0].score;
-  board.innerHTML = q.answers.map((a, i) =>
-    `<div class="feud-row" id="feud-row-${i}">
-      <div class="feud-rank">${i + 1}</div>
+  // Feud board
+  const board=document.getElementById('feud-board'), max=Math.max(...q.answers.map(a=>a.score),1);
+  board.innerHTML = q.answers.map((a,i)=>
+    `<div class="feud-row" id="fr-${i}">
+      <div class="feud-rank">${i+1}</div>
       <div class="feud-answer-text">
-        <div class="feud-bar" style="width:0%" id="feud-bar-${i}"></div>
+        <div class="feud-bar" id="fb-${i}" style="width:0%"></div>
         <span class="feud-answer-label">${escHtml(a.text)}</span>
       </div>
       <div class="feud-score">${a.score}</div>
     </div>`
   ).join('');
 
-  // Animate rows in
-  q.answers.forEach((a, i) => {
-    setTimeout(() => {
-      const row = document.getElementById(`feud-row-${i}`);
-      if (row) {
-        row.classList.add('revealed');
-        setTimeout(() => {
-          const bar = document.getElementById(`feud-bar-${i}`);
-          if (bar) bar.style.width = `${(a.score / maxScore) * 100}%`;
-        }, 100);
-      }
-    }, i * 180);
-  });
+  q.answers.forEach((a,i) => setTimeout(() => {
+    const row=document.getElementById(`fr-${i}`);
+    if(!row) return;
+    row.classList.add('revealed');
+    setTimeout(() => { const bar=document.getElementById(`fb-${i}`); if(bar) bar.style.width=`${(a.score/max)*100}%`; }, 100);
+  }, i*180));
 
-  // Mod controls
-  const isLastQ = qIdx === 19;
-  const isCheckpoint = [4, 9, 14, 19].includes(qIdx);
-  document.getElementById('reveal-mod-btn').style.display = isModerator ? 'block' : 'none';
-  document.getElementById('reveal-wait-msg').style.display = isModerator ? 'none' : 'block';
-  const nextBtn = document.getElementById('reveal-next-btn');
+  const isCP=([4,9,14,19].includes(qIdx)), isLast=(qIdx===19);
+  document.getElementById('reveal-mod-btn').style.display  = isModerator ? 'block':'none';
+  document.getElementById('reveal-wait-msg').style.display = isModerator ? 'none' :'block';
   if (isModerator) {
-    if (isLastQ) {
-      nextBtn.textContent = '🏆 View Final Results';
-    } else if (isCheckpoint) {
-      nextBtn.textContent = '🏆 View Standings';
-    } else {
-      nextBtn.textContent = '➡️ Next Question';
-    }
+    const nb=document.getElementById('reveal-next-btn'); nb.disabled=false;
+    nb.textContent = isLast ? '🏆 View Final Results' : isCP ? '🏆 View Standings' : '➡️ Next Question';
   }
 }
 
 async function moderatorNext() {
   if (!isModerator) return;
-  const qIdx = currentGameState.current_question;
-  const isCheckpoint = [4, 9, 14, 19].includes(qIdx);
-  const isLast = qIdx === 19;
-
-  if (isLast) {
-    // Show final leaderboard
-    await sb.from('game_state').update({ phase: 'leaderboard', current_question: qIdx }).eq('id', 1);
-  } else if (isCheckpoint) {
-    await sb.from('game_state').update({ phase: 'leaderboard', current_question: qIdx }).eq('id', 1);
-  } else {
-    // Move to next question
-    const nextQ = qIdx + 1;
-    await sb.from('game_state').update({
-      phase: 'question',
-      current_question: nextQ,
-      question_start_time: new Date().toISOString()
-    }).eq('id', 1);
-  }
+  const nb=document.getElementById('reveal-next-btn');
+  if(nb) { nb.disabled=true; nb.innerHTML='<span class="spinner"></span>'; }
+  const qIdx=currentGameState.current_question, isCP=([4,9,14,19].includes(qIdx));
+  try {
+    if (isCP || qIdx===19) {
+      await sb.from('game_state').update({ phase:'leaderboard', current_question:qIdx }).eq('id',1);
+    } else {
+      hasAnswered=false; myAnswerIndex=-1; myEarnedThisQ=0;
+      await sb.from('game_state').update({ phase:'question', current_question:qIdx+1, question_start_time:new Date().toISOString() }).eq('id',1);
+    }
+  } catch(_) { if(nb){nb.disabled=false;nb.textContent='Retry';} showToast('❌ Try again'); }
 }
 
-// ============================================================
-// LEADERBOARD SCREEN
-// ============================================================
+// ── LEADERBOARD ──────────────────────────────────────────────────
 async function renderLeaderboardScreen(qIdx) {
   showScreen('leaderboard');
+  const checkN=qIdx+1;
+  document.getElementById('lb-title').textContent    = `🏆 Standings After Q${checkN}`;
+  document.getElementById('lb-subtitle').textContent = {5:'Quarter Way!',10:'Halfway!',15:'Three Quarters!',20:'Final Standings!'}[checkN]||'';
 
-  const checkpointNum = qIdx + 1;
-  document.getElementById('lb-title').textContent = `🏆 Standings After Q${checkpointNum}`;
-  const labels = { 5: 'Quarter Way!', 10: 'Half Way!', 15: 'Three Quarters!', 20: 'Final Results!' };
-  document.getElementById('lb-subtitle').textContent = labels[checkpointNum] || '';
+  let players=[];
+  try { const {data}=await sb.from('players').select('*').order('score',{ascending:false}); players=data||[]; } catch(_){}
 
-  const { data: players } = await sb.from('players').select('*').order('score', { ascending: false });
-  if (!players) return;
+  if (qIdx===19) launchConfetti(80);
+  renderPodium('podium-row', players.slice(0,3));
 
-  // Podium (top 3)
-  renderPodium('podium-row', players.slice(0, 3));
-  if (qIdx === 19) launchConfetti(80);
+  const myRank = players.findIndex(p=>p.name===playerName)+1;
+  document.getElementById('my-rank-msg').textContent = `You're #${myRank} of ${players.length} — ${
+    myRank===1?"👑 Survey SAYS... You're dominating!":
+    myRank===2?"🔥 So close! Don't blink!":
+    myRank===3?"🥉 Podium life! Keep pushing!":
+    myRank<=Math.ceil(players.length/2)?"⚡ You're in the game — anything can happen!":
+    "😅 Hey, the comeback starts NOW!"}`;
 
-  // My rank
-  const myRank = players.findIndex(p => p.name === playerName) + 1;
-  const msgs = {
-    1: "👑 Survey SAYS... You're dominating!",
-    2: "🔥 So close! Don't blink!",
-    3: "🥉 Podium life! Keep pushing!",
-  };
-  const midMsg = "⚡ You're in the game — anything can happen!";
-  const botMsg = "😅 Hey, the comeback starts NOW!";
-  const myMsg = myRank <= 3 ? (msgs[myRank] || midMsg) : myRank <= Math.ceil(players.length / 2) ? midMsg : botMsg;
-  document.getElementById('my-rank-msg').textContent = `You're #${myRank} — ${myMsg}`;
-
-  // Full list
-  const list = document.getElementById('lb-full-list');
-  list.innerHTML = players.map((p, i) => {
-    const prev = prevLeaderboard.findIndex(pl => pl.name === p.name);
-    const rank = i + 1;
-    let delta = '→';
-    let deltaClass = 'same';
-    if (prev !== -1) {
-      if (prev + 1 > rank) { delta = `↑${prev + 1 - rank}`; deltaClass = 'up'; }
-      else if (prev + 1 < rank) { delta = `↓${rank - (prev + 1)}`; deltaClass = 'down'; }
-    }
-    return `<div class="lb-row ${p.name === playerName ? 'me' : ''}" style="animation-delay:${i * 60}ms">
+  document.getElementById('lb-full-list').innerHTML = players.map((p,i)=>{
+    const prev=prevLeaderboard.findIndex(x=>x.name===p.name), rank=i+1;
+    let delta='→',dc='same';
+    if(prev!==-1&&prev+1!==rank){ delta=prev+1>rank?`↑${prev+1-rank}`:`↓${rank-prev-1}`; dc=prev+1>rank?'up':'down'; }
+    return `<div class="lb-row ${p.name===playerName?'me':''}" style="animation-delay:${Math.min(i,20)*50}ms">
       <div class="lb-rank">${rank}</div>
-      <div class="lb-name">${escHtml(p.name)}${p.is_moderator ? ' 🎤' : ''}${p.name === playerName ? ' (you)' : ''}</div>
-      <div class="lb-score">${p.score || 0}</div>
-      <div class="lb-delta ${deltaClass}">${delta}</div>
+      <div class="lb-name">${escHtml(p.name)}${p.is_moderator?' 🎤':''}${p.name===playerName?' <em style="color:var(--gray);font-size:0.8rem">(you)</em>':''}</div>
+      <div class="lb-score">${p.score||0}</div>
+      <div class="lb-delta ${dc}">${delta}</div>
     </div>`;
   }).join('');
-
   prevLeaderboard = players.slice();
 
-  // Moderator controls
-  const isLast = qIdx === 19;
-  document.getElementById('lb-mod-btn').style.display = isModerator ? 'block' : 'none';
-  document.getElementById('lb-wait-msg').style.display = isModerator ? 'none' : 'block';
-  const lbNextBtn = document.getElementById('lb-next-btn');
+  document.getElementById('lb-mod-btn').style.display  = isModerator ? 'block':'none';
+  document.getElementById('lb-wait-msg').style.display = isModerator ? 'none' :'block';
   if (isModerator) {
-    if (isLast) {
-      lbNextBtn.textContent = '🎉 Show Final Results';
-      lbNextBtn.onclick = async () => {
-        await sb.from('game_state').update({ phase: 'end', current_question: qIdx }).eq('id', 1);
-      };
+    const lb=document.getElementById('lb-next-btn'); lb.disabled=false;
+    if (qIdx===19) {
+      lb.textContent='🎉 Show Final Results';
+      lb.onclick=async()=>{ lb.disabled=true; try{await sb.from('game_state').update({phase:'end',current_question:qIdx}).eq('id',1);}catch(_){lb.disabled=false;showToast('❌ Try again');} };
     } else {
-      lbNextBtn.textContent = '▶️ Continue to Next Question';
-      lbNextBtn.onclick = async () => {
-        const nextQ = qIdx + 1;
-        await sb.from('game_state').update({
-          phase: 'question',
-          current_question: nextQ,
-          question_start_time: new Date().toISOString()
-        }).eq('id', 1);
+      lb.textContent='▶️ Continue to Next Question';
+      lb.onclick=async()=>{
+        lb.disabled=true; hasAnswered=false; myAnswerIndex=-1; myEarnedThisQ=0;
+        try{await sb.from('game_state').update({phase:'question',current_question:qIdx+1,question_start_time:new Date().toISOString()}).eq('id',1);}
+        catch(_){lb.disabled=false;showToast('❌ Try again');}
       };
     }
   }
 }
 
-function renderPodium(containerId, top3) {
-  const container = document.getElementById(containerId);
-  const trophies = ['🥇', '🥈', '🥉'];
-  const heights = ['90px', '70px', '55px'];
-  // Reorder for podium display: 2nd, 1st, 3rd
-  const order = top3.length === 1 ? [0] : top3.length === 2 ? [1, 0] : [1, 0, 2];
-  container.innerHTML = order.map(i => {
-    if (!top3[i]) return '';
-    return `<div class="podium-item">
+function renderPodium(id, top3) {
+  const c=document.getElementById(id); if(!c) return;
+  const trophies=['🥇','🥈','🥉'], heights=['90px','70px','55px'];
+  const order=top3.length===1?[0]:top3.length===2?[1,0]:[1,0,2];
+  c.innerHTML=order.map(i=>!top3[i]?'':
+    `<div class="podium-item">
       <div class="podium-trophy">${trophies[i]}</div>
       <div class="podium-name">${escHtml(top3[i].name)}</div>
-      <div class="podium-score">${top3[i].score || 0}</div>
+      <div class="podium-score">${top3[i].score||0}</div>
       <div class="podium-block" style="height:${heights[i]}"></div>
-    </div>`;
-  }).join('');
-}
-
-// ============================================================
-// END SCREEN
-// ============================================================
-async function renderEndScreen() {
-  showScreen('end');
-  launchConfetti(120);
-
-  const { data: players } = await sb.from('players').select('*').order('score', { ascending: false });
-  if (!players || players.length === 0) return;
-
-  const winner = players[0];
-  document.getElementById('end-headline').textContent = `🏆 ${winner.name} knows this office better than anyone!`;
-
-  renderPodium('end-podium-row', players.slice(0, 3));
-
-  const list = document.getElementById('end-lb-list');
-  list.innerHTML = players.map((p, i) =>
-    `<div class="lb-row ${p.name === playerName ? 'me' : ''}" style="animation-delay:${i * 60}ms">
-      <div class="lb-rank">${['🥇','🥈','🥉'][i] || `#${i + 1}`}</div>
-      <div class="lb-name">${escHtml(p.name)}${p.name === playerName ? ' (you)' : ''}</div>
-      <div class="lb-score">${p.score || 0} pts</div>
     </div>`
   ).join('');
 }
 
-// ============================================================
-// ONLINE COUNT
-// ============================================================
-async function updateOnlineCount() {
-  const { count } = await sb.from('players').select('*', { count: 'exact', head: true });
-  document.getElementById('online-count').textContent = `${count || 0} online`;
+// ── END SCREEN ────────────────────────────────────────────────────
+async function renderEndScreen() {
+  showScreen('end'); launchConfetti(120);
+  let players=[];
+  try { const{data}=await sb.from('players').select('*').order('score',{ascending:false}); players=data||[]; } catch(_){}
+  if(players.length>0) document.getElementById('end-headline').textContent=`🏆 ${players[0].name} knows this office better than anyone!`;
+  renderPodium('end-podium-row', players.slice(0,3));
+  document.getElementById('end-lb-list').innerHTML=players.map((p,i)=>
+    `<div class="lb-row ${p.name===playerName?'me':''}" style="animation-delay:${Math.min(i,20)*50}ms">
+      <div class="lb-rank">${['🥇','🥈','🥉'][i]||`#${i+1}`}</div>
+      <div class="lb-name">${escHtml(p.name)}${p.name===playerName?' <em style="color:var(--gray);font-size:0.8rem">(you)</em>':''}</div>
+      <div class="lb-score">${p.score||0} pts</div>
+    </div>`
+  ).join('');
+  document.getElementById('end-mod-reset').style.display=isModerator?'block':'none';
 }
 
-// ============================================================
-// CONFETTI
-// ============================================================
-function launchConfetti(count = 60) {
-  const canvas = document.getElementById('confetti-canvas');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  const ctx = canvas.getContext('2d');
-  const colors = ['#FFD700', '#FFA500', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#ffffff'];
-  const particles = Array.from({ length: count }, () => ({
-    x: Math.random() * canvas.width,
-    y: -10,
-    w: Math.random() * 10 + 5,
-    h: Math.random() * 6 + 3,
-    color: colors[Math.floor(Math.random() * colors.length)],
-    vx: (Math.random() - 0.5) * 4,
-    vy: Math.random() * 4 + 2,
-    rot: Math.random() * 360,
-    vr: (Math.random() - 0.5) * 10
-  }));
-  let frame = 0;
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    particles.forEach(p => {
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot * Math.PI / 180);
-      ctx.fillStyle = p.color;
-      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
-      ctx.restore();
-      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
-      p.vy += 0.05;
-    });
-    frame++;
-    if (frame < 180) requestAnimationFrame(draw);
-    else ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }
+// ── ONLINE COUNT ──────────────────────────────────────────────────
+async function updateOnlineCount() {
+  try { const{count}=await sb.from('players').select('*',{count:'exact',head:true}); document.getElementById('online-count').textContent=`${count||0} online`; } catch(_){}
+}
+
+// ── CONFETTI ───────────────────────────────────────────────────────
+function launchConfetti(n=60) {
+  const cv=document.getElementById('confetti-canvas');
+  cv.width=window.innerWidth; cv.height=window.innerHeight;
+  const ctx=cv.getContext('2d'), cols=['#FFD700','#FFA500','#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#fff'];
+  const ps=Array.from({length:n},()=>({x:Math.random()*cv.width,y:-10,w:Math.random()*10+5,h:Math.random()*6+3,c:cols[Math.floor(Math.random()*cols.length)],vx:(Math.random()-.5)*4,vy:Math.random()*4+2,r:Math.random()*360,vr:(Math.random()-.5)*10}));
+  let f=0; function draw(){ctx.clearRect(0,0,cv.width,cv.height);ps.forEach(p=>{ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r*Math.PI/180);ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.vy+=0.06;});if(++f<200)requestAnimationFrame(draw);else ctx.clearRect(0,0,cv.width,cv.height);}
   draw();
 }
 
-// ============================================================
-// TOAST
-// ============================================================
-let toastTimeout;
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => el.classList.remove('show'), 2500);
-}
+// ── TOAST ──────────────────────────────────────────────────────────
+let toastT; function showToast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('show'),2500);}
 
-// ============================================================
-// SCREEN MANAGER
-// ============================================================
-function showScreen(name) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  const el = document.getElementById(`screen-${name}`);
-  if (el) {
-    el.classList.add('active');
-    window.scrollTo(0, 0);
-  }
+// ── SCREEN MANAGER ─────────────────────────────────────────────────
+function showScreen(n){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));const e=document.getElementById(`screen-${n}`);if(e){e.classList.add('active');window.scrollTo(0,0);}if(n==='lobby')refreshPlayerList();}
 
-  // Refresh lobby player list when on lobby
-  if (name === 'lobby') refreshPlayerList();
-}
+// ── UTILITY ────────────────────────────────────────────────────────
+function showMsg(id,m,t){const e=document.getElementById(id);if(e)e.innerHTML=m?`<div class="msg msg-${t}">${m}</div>`:''; }
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-// ============================================================
-// UTILITY
-// ============================================================
-function showMsg(elId, msg, type) {
-  const el = document.getElementById(elId);
-  if (!el) return;
-  el.innerHTML = `<div class="msg msg-${type}">${msg}</div>`;
-}
-
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ============================================================
-// START
-// ============================================================
+// Kick off
 init();
 </script>
 </body>
