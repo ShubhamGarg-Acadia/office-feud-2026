@@ -191,9 +191,12 @@
     }
     .login-box { width: 100%; max-width: 440px; }
     .login-form { display: flex; flex-direction: column; gap: 16px; }
-    .mod-toggle-row {
+    label.mod-toggle-row {
       display: flex; align-items: center; gap: 10px;
       cursor: pointer; padding: 8px 0;
+      text-transform: none; letter-spacing: normal;
+      color: var(--white); font-family: 'Barlow', sans-serif;
+      font-size: 1rem; margin-bottom: 0;
     }
     .mod-toggle-row input[type="checkbox"] {
       width: 18px; height: 18px; accent-color: var(--gold); cursor: pointer;
@@ -641,10 +644,10 @@
         <label>Your Name</label>
         <input type="text" id="name-input" class="input-field" placeholder="Enter your name..." maxlength="30" autocomplete="off">
       </div>
-      <div class="mod-toggle-row" onclick="document.getElementById('mod-check').click()">
+      <label class="mod-toggle-row" for="mod-check">
         <input type="checkbox" id="mod-check">
         <span>I am the Moderator</span>
-      </div>
+      </label>
       <div id="mod-pw-wrap" style="display:none">
         <label>Moderator Password</label>
         <input type="password" id="mod-pw" class="input-field" placeholder="Enter moderator password...">
