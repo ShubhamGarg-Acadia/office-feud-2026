@@ -451,6 +451,29 @@ label.mod-toggle-row {
   animation: slideUp 0.4s var(--ease-bounce);
 }
 
+/* Question contextual background */
+.q-bg-panel {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  transition: background 0.7s ease, opacity 0.5s ease;
+  opacity: 0;
+}
+.q-bg-panel.active { opacity: 1; }
+.q-bg-emoji {
+  position: fixed; z-index: 0; pointer-events: none;
+  font-size: clamp(180px, 35vw, 280px);
+  opacity: 0;
+  right: -20px; bottom: -20px;
+  line-height: 1; user-select: none;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  transform: rotate(-15deg) scale(0.8);
+  filter: blur(0px);
+}
+.q-bg-emoji.active {
+  opacity: 0.09;
+  transform: rotate(-15deg) scale(1);
+}
+#screen-question { position: relative; }
+
 /* Answer buttons */
 .answers-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
 @media (max-width: 380px) { .answers-grid { grid-template-columns: 1fr; } }
@@ -750,8 +773,8 @@ label.mod-toggle-row {
     <ul class="rules-list">
       <li><span class="rule-icon">🎯</span><span>20 questions — answers come from a real survey of your 50 colleagues</span></li>
       <li><span class="rule-icon">⏱️</span><span>You have <strong>15 seconds</strong> per question</span></li>
-      <li><span class="rule-icon">⚡</span><span>Answer in <strong>1–5 sec → 1.1× bonus</strong></span></li>
-      <li><span class="rule-icon">🏃</span><span>Answer in <strong>5–10 sec → 1.05× bonus</strong></span></li>
+      <li><span class="rule-icon">⚡</span><span>Answer in <strong>1–5 sec → 1.5× score bonus</strong></span></li>
+      <li><span class="rule-icon">🏃</span><span>Answer in <strong>5–10 sec → 1.2× score bonus</strong></span></li>
       <li><span class="rule-icon">🕐</span><span>Answer in <strong>10–15 sec → exact score</strong></span></li>
       <li><span class="rule-icon">🏆</span><span>Standings shown after every 5 questions</span></li>
       <li><span class="rule-icon">🎬</span><span>Moderator controls the pace — everyone follows their lead</span></li>
@@ -770,6 +793,8 @@ label.mod-toggle-row {
      SCREEN 3 — QUESTION
 ══════════════════════════════════════ -->
 <div id="screen-question" class="screen">
+  <div id="q-bg-panel" class="q-bg-panel"></div>
+  <div id="q-bg-emoji" class="q-bg-emoji"></div>
   <div class="q-topbar">
     <div class="q-num-badge">Q <strong id="q-num">1</strong><span style="color:var(--gray2)">/20</span></div>
     <div class="q-score-pill">
@@ -896,26 +921,26 @@ const RECONNECT_BASE    = 2000; // ms, doubles on each retry
 
 // ── QUESTIONS ───────────────────────────────────────
 const QS = [
-  {q:"Name the most-used emoji in your work Slack or Teams chat.",a:[{t:"👍 Thumbs Up",s:18},{t:"😂 Laughing Face",s:9},{t:"🙏 Folded Hands",s:7},{t:"🔥 Fire",s:5},{t:"❤️ Heart",s:4},{t:"👀 Eyes",s:3},{t:"✅ Check Mark",s:2},{t:"🎉 Party Popper",s:2}]},
-  {q:"Name the first thing you do when you log in for work in the morning.",a:[{t:"Check Slack/Teams",s:19},{t:"Check Email",s:13},{t:"Look at my Calendar",s:8},{t:"Check Task Manager",s:4},{t:"Open Dashboards",s:3},{t:"Scroll LinkedIn",s:1},{t:"Make Coffee First",s:1},{t:"Check colleague status",s:1}]},
-  {q:"Name something people do during a boring video call.",a:[{t:"Browse their phone",s:17},{t:"Check emails",s:12},{t:"Online shopping",s:7},{t:"Mute & talk to someone",s:5},{t:"Scroll social media",s:4},{t:"Doodle / take fake notes",s:3},{t:"Watch something else",s:1},{t:"Order food",s:1}]},
-  {q:"Name a phrase used way too much in meetings.",a:[{t:"Let's take this offline",s:16},{t:"Can everyone hear me?",s:11},{t:"Circle back",s:9},{t:"Quick sync",s:5},{t:"Move the needle",s:4},{t:"Bandwidth",s:3},{t:"Align on this",s:1},{t:"At the end of the day",s:1}]},
-  {q:"Name a reason someone is late to a virtual meeting.",a:[{t:"Previous meeting ran long",s:20},{t:"Forgot about it",s:11},{t:"Couldn't find the link",s:8},{t:"Internet/tech issues",s:5},{t:"Kids or home interruption",s:3},{t:"Wrong time zone",s:1},{t:"Was on another call",s:1},{t:"Getting coffee",s:1}]},
-  {q:"Name something that always goes wrong on a video call.",a:[{t:"Mic is muted",s:18},{t:"Internet drops",s:12},{t:"Echo or feedback",s:7},{t:"Camera won't turn on",s:5},{t:"Screen share doesn't work",s:4},{t:"Background noise",s:2},{t:"Someone freezes",s:1},{t:"Wrong window shared",s:1}]},
-  {q:"Name the most overused word in marketing.",a:[{t:"Synergy",s:14},{t:"Disruptive",s:11},{t:"Leverage",s:9},{t:"Authentic",s:6},{t:"Scalable",s:5},{t:"Data-driven",s:3},{t:"Holistic",s:1},{t:"Pivot",s:1}]},
-  {q:"Name your go-to work-from-home snack.",a:[{t:"Chips",s:16},{t:"Coffee/Tea",s:12},{t:"Nuts",s:8},{t:"Biscuits/Cookies",s:6},{t:"Fruit",s:4},{t:"Chocolate",s:2},{t:"Bread/Toast",s:1},{t:"Protein bar",s:1}]},
-  {q:"Name the biggest distraction when working from home.",a:[{t:"Phone/social media",s:18},{t:"Family or kids",s:14},{t:"TV in the background",s:7},{t:"Pets",s:5},{t:"Household chores",s:3},{t:"Delivery/doorbell",s:1},{t:"Neighbors",s:1},{t:"Napping",s:1}]},
-  {q:"Name the best part about working remotely.",a:[{t:"No commute",s:20},{t:"Work in pajamas",s:12},{t:"Flexible hours",s:8},{t:"More family time",s:5},{t:"Better focus",s:2},{t:"Home-cooked food",s:1},{t:"No office politics",s:1},{t:"My own music",s:1}]},
-  {q:"Name something people fake on video calls.",a:[{t:"Paying attention",s:19},{t:"Laughing at the right time",s:11},{t:"Taking notes",s:8},{t:"Bad internet to avoid speaking",s:5},{t:"Looking busy",s:4},{t:"Smiling",s:1},{t:"Being about to reply",s:1},{t:"Enthusiasm",s:1}]},
-  {q:"Name a type of meeting that could have been an email.",a:[{t:"Status update call",s:19},{t:"Weekly team standup",s:13},{t:"Quick alignment call",s:8},{t:"Monday morning all-hands",s:5},{t:"Project kickoff",s:2},{t:"Retrospective",s:1},{t:"Reporting meeting",s:1},{t:"One-on-one catch-up",s:1}]},
-  {q:"Name something on your work desk right now.",a:[{t:"Coffee mug",s:17},{t:"Notebook/Notepad",s:12},{t:"Phone",s:8},{t:"Headphones",s:6},{t:"Water bottle",s:4},{t:"Sticky notes",s:1},{t:"Charger/cables",s:1},{t:"A snack",s:1}]},
-  {q:"Name a Slack/Teams reaction you use all the time.",a:[{t:"👍 Thumbs Up",s:17},{t:"❤️ Heart",s:10},{t:"😂 Laugh",s:8},{t:"🎉 Tada",s:6},{t:"👀 Eyes",s:4},{t:"🔥 Fire",s:3},{t:"✅ Check",s:1},{t:"🙌 Raising Hands",s:1}]},
-  {q:"Name what you do in the last 5 minutes before logging off.",a:[{t:"Check Slack one last time",s:16},{t:"Update task manager",s:11},{t:"Send a final email",s:9},{t:"Close all 47 tabs",s:6},{t:"Write tomorrow's plan",s:4},{t:"Ghost everyone 👻",s:2},{t:"Say bye on Slack",s:1},{t:"Just close the laptop",s:1}]},
-  {q:"Name the marketing metric teams obsess over the most.",a:[{t:"ROI",s:17},{t:"Conversion rate",s:12},{t:"CTR (Click-through rate)",s:8},{t:"CAC (Acquisition Cost)",s:6},{t:"Revenue/Sales",s:4},{t:"Impressions",s:1},{t:"Engagement rate",s:1},{t:"Bounce rate",s:1}]},
-  {q:"Name a tool that sends you way too many notifications.",a:[{t:"Slack",s:21},{t:"Email/Outlook",s:13},{t:"Jira",s:7},{t:"Asana",s:4},{t:"Google Calendar",s:2},{t:"LinkedIn",s:1},{t:"Teams",s:1},{t:"Notion",s:1}]},
-  {q:"Name something you'd add to your home office if money were no object.",a:[{t:"Better chair/standing desk",s:17},{t:"Bigger/multiple monitors",s:12},{t:"Better lighting/ring light",s:8},{t:"Faster internet",s:6},{t:"A coffee machine",s:4},{t:"Soundproofing",s:1},{t:"A treadmill",s:1},{t:"A dedicated room",s:1}]},
-  {q:"Name something that happens when you say 'I have no meetings today.'",a:[{t:"A meeting gets added",s:21},{t:"Someone pings for a quick call",s:14},{t:"An urgent Slack message arrives",s:7},{t:"A deadline appears",s:4},{t:"Manager asks for a catch-up",s:2},{t:"A fire drill begins",s:1},{t:"Calendar invite comes instantly",s:1},{t:"'Can we hop on a call?'",s:0}]},
-  {q:"Name the first thing you do after logging off from work.",a:[{t:"Watch TV/Netflix",s:16},{t:"Make/eat dinner",s:12},{t:"Go for a walk",s:9},{t:"Scroll social media",s:6},{t:"Exercise/gym",s:4},{t:"Spend time with family",s:1},{t:"Nap",s:1},{t:"Check email one more time 😅",s:1}]}
+  {q:"Name the most-used emoji in your work Slack or Teams chat.",       bg:{e:"💬",g:"radial-gradient(ellipse at center, #7C3AED 0%, #4C1D95 100%)"},a:[{t:"👍 Thumbs Up",s:18},{t:"😂 Laughing Face",s:9},{t:"🙏 Folded Hands",s:7},{t:"🔥 Fire",s:5},{t:"❤️ Heart",s:4},{t:"👀 Eyes",s:3},{t:"✅ Check Mark",s:2},{t:"🎉 Party Popper",s:2}]},
+  {q:"Name the first thing you do when you log in for work in the morning.",bg:{e:"🌅",g:"radial-gradient(ellipse at center, #F59E0B 0%, #B45309 100%)"},a:[{t:"Check Slack/Teams",s:19},{t:"Check Email",s:13},{t:"Look at my Calendar",s:8},{t:"Check Task Manager",s:4},{t:"Open Dashboards",s:3},{t:"Scroll LinkedIn",s:1},{t:"Make Coffee First",s:1},{t:"Check colleague status",s:1}]},
+  {q:"Name something people do during a boring video call.",              bg:{e:"😴",g:"radial-gradient(ellipse at center, #1E40AF 0%, #1E3A8A 100%)"},a:[{t:"Browse their phone",s:17},{t:"Check emails",s:12},{t:"Online shopping",s:7},{t:"Mute & talk to someone",s:5},{t:"Scroll social media",s:4},{t:"Doodle / take fake notes",s:3},{t:"Watch something else",s:1},{t:"Order food",s:1}]},
+  {q:"Name a phrase used way too much in meetings.",                      bg:{e:"🗣️",g:"radial-gradient(ellipse at center, #065F46 0%, #064E3B 100%)"},a:[{t:"Let's take this offline",s:16},{t:"Can everyone hear me?",s:11},{t:"Circle back",s:9},{t:"Quick sync",s:5},{t:"Move the needle",s:4},{t:"Bandwidth",s:3},{t:"Align on this",s:1},{t:"At the end of the day",s:1}]},
+  {q:"Name a reason someone is late to a virtual meeting.",               bg:{e:"⏰",g:"radial-gradient(ellipse at center, #9F1239 0%, #881337 100%)"},a:[{t:"Previous meeting ran long",s:20},{t:"Forgot about it",s:11},{t:"Couldn't find the link",s:8},{t:"Internet/tech issues",s:5},{t:"Kids or home interruption",s:3},{t:"Wrong time zone",s:1},{t:"Was on another call",s:1},{t:"Getting coffee",s:1}]},
+  {q:"Name something that always goes wrong on a video call.",            bg:{e:"📹",g:"radial-gradient(ellipse at center, #92400E 0%, #78350F 100%)"},a:[{t:"Mic is muted",s:18},{t:"Internet drops",s:12},{t:"Echo or feedback",s:7},{t:"Camera won't turn on",s:5},{t:"Screen share doesn't work",s:4},{t:"Background noise",s:2},{t:"Someone freezes",s:1},{t:"Wrong window shared",s:1}]},
+  {q:"Name the most overused word in marketing.",                         bg:{e:"📣",g:"radial-gradient(ellipse at center, #BE185D 0%, #9D174D 100%)"},a:[{t:"Synergy",s:14},{t:"Disruptive",s:11},{t:"Leverage",s:9},{t:"Authentic",s:6},{t:"Scalable",s:5},{t:"Data-driven",s:3},{t:"Holistic",s:1},{t:"Pivot",s:1}]},
+  {q:"Name your go-to work-from-home snack.",                            bg:{e:"🍿",g:"radial-gradient(ellipse at center, #D97706 0%, #B45309 100%)"},a:[{t:"Chips",s:16},{t:"Coffee/Tea",s:12},{t:"Nuts",s:8},{t:"Biscuits/Cookies",s:6},{t:"Fruit",s:4},{t:"Chocolate",s:2},{t:"Bread/Toast",s:1},{t:"Protein bar",s:1}]},
+  {q:"Name the biggest distraction when working from home.",              bg:{e:"📱",g:"radial-gradient(ellipse at center, #0F766E 0%, #115E59 100%)"},a:[{t:"Phone/social media",s:18},{t:"Family or kids",s:14},{t:"TV in the background",s:7},{t:"Pets",s:5},{t:"Household chores",s:3},{t:"Delivery/doorbell",s:1},{t:"Neighbors",s:1},{t:"Napping",s:1}]},
+  {q:"Name the best part about working remotely.",                        bg:{e:"🏠",g:"radial-gradient(ellipse at center, #1D4ED8 0%, #1E40AF 100%)"},a:[{t:"No commute",s:20},{t:"Work in pajamas",s:12},{t:"Flexible hours",s:8},{t:"More family time",s:5},{t:"Better focus",s:2},{t:"Home-cooked food",s:1},{t:"No office politics",s:1},{t:"My own music",s:1}]},
+  {q:"Name something people fake on video calls.",                        bg:{e:"🎭",g:"radial-gradient(ellipse at center, #5B21B6 0%, #4C1D95 100%)"},a:[{t:"Paying attention",s:19},{t:"Laughing at the right time",s:11},{t:"Taking notes",s:8},{t:"Bad internet to avoid speaking",s:5},{t:"Looking busy",s:4},{t:"Smiling",s:1},{t:"Being about to reply",s:1},{t:"Enthusiasm",s:1}]},
+  {q:"Name a type of meeting that could have been an email.",             bg:{e:"📧",g:"radial-gradient(ellipse at center, #155E75 0%, #164E63 100%)"},a:[{t:"Status update call",s:19},{t:"Weekly team standup",s:13},{t:"Quick alignment call",s:8},{t:"Monday morning all-hands",s:5},{t:"Project kickoff",s:2},{t:"Retrospective",s:1},{t:"Reporting meeting",s:1},{t:"One-on-one catch-up",s:1}]},
+  {q:"Name something on your work desk right now.",                       bg:{e:"☕",g:"radial-gradient(ellipse at center, #78350F 0%, #451A03 100%)"},a:[{t:"Coffee mug",s:17},{t:"Notebook/Notepad",s:12},{t:"Phone",s:8},{t:"Headphones",s:6},{t:"Water bottle",s:4},{t:"Sticky notes",s:1},{t:"Charger/cables",s:1},{t:"A snack",s:1}]},
+  {q:"Name a Slack/Teams reaction you use all the time.",                 bg:{e:"⚡",g:"radial-gradient(ellipse at center, #7C3AED 0%, #6D28D9 100%)"},a:[{t:"👍 Thumbs Up",s:17},{t:"❤️ Heart",s:10},{t:"😂 Laugh",s:8},{t:"🎉 Tada",s:6},{t:"👀 Eyes",s:4},{t:"🔥 Fire",s:3},{t:"✅ Check",s:1},{t:"🙌 Raising Hands",s:1}]},
+  {q:"Name what you do in the last 5 minutes before logging off.",        bg:{e:"🌇",g:"radial-gradient(ellipse at center, #9D4209 0%, #7C2D12 100%)"},a:[{t:"Check Slack one last time",s:16},{t:"Update task manager",s:11},{t:"Send a final email",s:9},{t:"Close all 47 tabs",s:6},{t:"Write tomorrow's plan",s:4},{t:"Ghost everyone 👻",s:2},{t:"Say bye on Slack",s:1},{t:"Just close the laptop",s:1}]},
+  {q:"Name the marketing metric teams obsess over the most.",             bg:{e:"📊",g:"radial-gradient(ellipse at center, #047857 0%, #065F46 100%)"},a:[{t:"ROI",s:17},{t:"Conversion rate",s:12},{t:"CTR (Click-through rate)",s:8},{t:"CAC (Acquisition Cost)",s:6},{t:"Revenue/Sales",s:4},{t:"Impressions",s:1},{t:"Engagement rate",s:1},{t:"Bounce rate",s:1}]},
+  {q:"Name a tool that sends you way too many notifications.",            bg:{e:"🔔",g:"radial-gradient(ellipse at center, #B91C1C 0%, #991B1B 100%)"},a:[{t:"Slack",s:21},{t:"Email/Outlook",s:13},{t:"Jira",s:7},{t:"Asana",s:4},{t:"Google Calendar",s:2},{t:"LinkedIn",s:1},{t:"Teams",s:1},{t:"Notion",s:1}]},
+  {q:"Name something you'd add to your home office if money were no object.",bg:{e:"💺",g:"radial-gradient(ellipse at center, #0369A1 0%, #075985 100%)"},a:[{t:"Better chair/standing desk",s:17},{t:"Bigger/multiple monitors",s:12},{t:"Better lighting/ring light",s:8},{t:"Faster internet",s:6},{t:"A coffee machine",s:4},{t:"Soundproofing",s:1},{t:"A treadmill",s:1},{t:"A dedicated room",s:1}]},
+  {q:"Name something that happens when you say 'I have no meetings today.'",bg:{e:"😱",g:"radial-gradient(ellipse at center, #831843 0%, #701A75 100%)"},a:[{t:"A meeting gets added",s:21},{t:"Someone pings for a quick call",s:14},{t:"An urgent Slack message arrives",s:7},{t:"A deadline appears",s:4},{t:"Manager asks for a catch-up",s:2},{t:"A fire drill begins",s:1},{t:"Calendar invite comes instantly",s:1},{t:"'Can we hop on a call?'",s:0}]},
+  {q:"Name the first thing you do after logging off from work.",          bg:{e:"🛋️",g:"radial-gradient(ellipse at center, #1E3A5F 0%, #0F2040 100%)"},a:[{t:"Watch TV/Netflix",s:16},{t:"Make/eat dinner",s:12},{t:"Go for a walk",s:9},{t:"Scroll social media",s:6},{t:"Exercise/gym",s:4},{t:"Spend time with family",s:1},{t:"Nap",s:1},{t:"Check email one more time 😅",s:1}]}
 ];
 const LETTERS = ['A','B','C','D','E','F','G','H'];
 
@@ -928,6 +953,7 @@ let timerID = null;
 let answered = false, myAnsIdx = -1, myEarned = 0;
 let prevLb = [];
 let submitting = false;
+let autoRevealFired = false;
 let reconnectDelay = RECONNECT_BASE;
 
 // ── BOOT ─────────────────────────────────────────────
@@ -1019,7 +1045,7 @@ async function handleState(state) {
         .eq('player_name', me.name).eq('question_index', qi).maybeSingle();
       if (a) { answered = true; myAnsIdx = a.answer_index; myEarned = a.multiplied_score; }
     } catch (_) {}
-    submitting = false;
+    submitting = false; autoRevealFired = false;
     renderQuestion(qi, state.question_start_time);
     return;
   }
@@ -1112,18 +1138,36 @@ async function doReset() {
   const btn = document.getElementById('reset-confirm-btn');
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Resetting...';
   try {
-    // Uses the security-definer SQL function — clean, reliable, no hacks
-    const { error } = await sb.rpc('reset_game');
-    if (error) throw error;
+    // Strategy 1: RPC function (clean, needs new setup.sql)
+    const { error: rpcErr } = await sb.rpc('reset_game');
+
+    if (rpcErr) {
+      // Strategy 2: Direct deletes with WHERE clauses PostgREST always accepts.
+      // question_index is 0-19, gte(-1) matches every answers row.
+      // score is always >= 0, gte(-1) matches every players row.
+      const [ra, rp] = await Promise.all([
+        sb.from('answers').delete().gte('question_index', -1),
+        sb.from('players').delete().gte('score', -1)
+      ]);
+      if (ra.error) throw new Error(ra.error.message);
+      if (rp.error) throw new Error(rp.error.message);
+    }
+
+    // Reset game_state — always safe with .eq('id',1)
+    await sb.from('game_state').update({
+      phase: 'lobby', current_question: 0,
+      question_start_time: new Date().toISOString()
+    }).eq('id', 1);
 
     localStorage.removeItem('of_name');
-    me = null; answered = false; myAnsIdx = -1; prevLb = []; submitting = false;
+    me = null; answered = false; myAnsIdx = -1;
+    prevLb = []; submitting = false; autoRevealFired = false;
     closeReset();
     toast('✅ Game reset! All players must rejoin.');
     setTimeout(() => window.location.reload(), 900);
   } catch (err) {
     document.getElementById('reset-msg').innerHTML =
-      `<div class="msg msg-error">❌ ${esc(err.message)}</div>`;
+      '<div class="msg msg-error">❌ ' + esc(err.message) + '</div>';
     btn.disabled = false; btn.innerHTML = 'Yes, Reset';
   }
 }
@@ -1136,6 +1180,19 @@ function renderQuestion(qi, startStr) {
   document.getElementById('q-num').textContent   = qi + 1;
   document.getElementById('q-score').textContent = me.score;
   document.getElementById('q-text').textContent  = q.q;
+
+  // Set question-specific background
+  const bgPanel = document.getElementById('q-bg-panel');
+  const bgEmoji = document.getElementById('q-bg-emoji');
+  if (bgPanel && q.bg) {
+    bgPanel.style.background = q.bg.g;
+    bgPanel.classList.remove('active');
+    if (bgEmoji) { bgEmoji.textContent = q.bg.e; bgEmoji.classList.remove('active'); }
+    requestAnimationFrame(() => {
+      bgPanel.classList.add('active');
+      if (bgEmoji) bgEmoji.classList.add('active');
+    });
+  }
 
   // Progress dots
   const prog = document.getElementById('q-progress');
@@ -1187,7 +1244,25 @@ function startTimer(startStr) {
       if (!answered && !submitting) {
         answered = true; submitting = true;
         disableAnswers();
+        toast("⏰ Time's up!");
         saveAnswer(-1, 0, Q_SECS).finally(() => submitting = false);
+      }
+      // Moderator auto-advances to reveal after 1.5s buffer
+      // giving all 50 players time to save their answers first
+      if (me?.isMod && !autoRevealFired) {
+        autoRevealFired = true;
+        // Show countdown toast so moderator knows what's happening
+        toast('⏰ Time's up! Auto-revealing in 1.5s...');
+        setTimeout(async () => {
+          // Guard: only proceed if we're still on the question screen
+          if (gs && gs.phase === 'question') {
+            try {
+              await sb.from('game_state')
+                .update({ phase: 'reveal', current_question: gs.current_question })
+                .eq('id', 1);
+            } catch(_) { autoRevealFired = false; } // allow retry on failure
+          }
+        }, 1500);
       }
     }
   }
@@ -1209,7 +1284,7 @@ async function pickAnswer(idx) {
 
   myAnsIdx = idx;
   const raw  = QS[gs.current_question].a[idx].s;
-  const mult = elapsed <= 5 ? 1.1 : elapsed <= 10 ? 1.05 : 1.0;
+  const mult = elapsed <= 5 ? 1.5 : elapsed <= 10 ? 1.2 : 1.0;
   myEarned   = Math.round(raw * mult);
 
   // Optimistic UI
@@ -1262,9 +1337,10 @@ async function updateAnswerCount() {
 
 async function doSkip() {
   stopTimer();
+  autoRevealFired = true; // prevent double-fire if timer was mid-tick
   try {
     await sb.from('game_state').update({ phase:'reveal', current_question: gs.current_question }).eq('id',1);
-  } catch(_) { toast('❌ Try again'); }
+  } catch(_) { autoRevealFired = false; toast('❌ Try again'); }
 }
 
 // ── REVEAL ───────────────────────────────────────────
