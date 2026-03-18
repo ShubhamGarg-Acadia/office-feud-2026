@@ -958,16 +958,47 @@ let reconnectDelay = RECONNECT_BASE;
 
 // ── BOOT ─────────────────────────────────────────────
 async function boot() {
-  if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
-    setMsg('login-msg', '⚠️ Open this file and replace YOUR_SUPABASE_URL and YOUR_SUPABASE_ANON_KEY.', 'error');
+  // STEP 1: Hard-check credentials are actually set
+  if (!SUPABASE_URL || SUPABASE_URL.includes('YOUR_SUPABASE') ||
+      !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('YOUR_SUPABASE')) {
+    showSetupOverlay();
     return;
   }
-  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    realtime: { timeout: 30000 },
-    db: { schema: 'public' }
-  });
 
-  // Attempt session restore
+  // STEP 2: Init Supabase
+  try {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      realtime: { timeout: 30000 },
+      db: { schema: 'public' }
+    });
+  } catch(e) {
+    showSetupOverlay('Could not initialise Supabase: ' + (e.message||'Unknown error'));
+    return;
+  }
+
+  // STEP 3: Verify connection by pinging game_state
+  let gsRow = null;
+  try {
+    const { data, error } = await sb.from('game_state').select('*').eq('id',1).maybeSingle();
+    if (error) throw error;
+    gsRow = data;
+  } catch(e) {
+    showSetupOverlay('Supabase connection failed: ' + (e.message||'Unknown error') +
+      '<br><br>Make sure you ran setup.sql and the URL/key are correct.');
+    return;
+  }
+
+  // Auto-seed game_state row if missing (safety net)
+  if (!gsRow) {
+    try {
+      await sb.from('game_state').upsert({
+        id:1, phase:'lobby', current_question:0,
+        question_start_time: new Date().toISOString()
+      });
+    } catch(_) {}
+  }
+
+  // STEP 4: Try restore session from localStorage
   const saved = localStorage.getItem('of_name');
   if (saved) {
     try {
@@ -979,8 +1010,33 @@ async function boot() {
         return;
       }
     } catch (_) {}
+    // Stale localStorage — clear and fall through to login
+    localStorage.removeItem('of_name');
   }
+
   show('login');
+}
+
+// Full-screen setup overlay — impossible to miss
+function showSetupOverlay(extra) {
+  const existing = document.getElementById('setup-overlay');
+  if (existing) existing.remove();
+  const d = document.createElement('div');
+  d.id = 'setup-overlay';
+  d.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#08091A;display:flex;align-items:center;justify-content:center;padding:20px;';
+  d.innerHTML = `<div style="max-width:500px;width:100%;background:rgba(13,16,48,0.98);border:2px solid #FFD700;border-radius:16px;padding:32px;text-align:center;box-shadow:0 0 60px rgba(255,215,0,0.25)">
+    <div style="font-size:3rem;margin-bottom:12px">⚙️</div>
+    <div style="font-family:Oswald,sans-serif;font-size:1.5rem;font-weight:800;color:#FFD700;letter-spacing:2px;margin-bottom:14px">ONE-TIME SETUP NEEDED</div>
+    ${extra ? `<div style="background:rgba(255,71,87,0.15);border:1px solid rgba(255,71,87,0.5);border-radius:8px;padding:12px;margin-bottom:16px;color:#FF8E99;font-size:0.88rem;line-height:1.5">${extra}</div>` : ''}
+    <div style="color:#7F8CAA;font-size:0.92rem;line-height:2;text-align:left;background:rgba(0,0,0,0.3);border-radius:10px;padding:16px;margin-bottom:16px">
+      <b style="color:#FFD700">1.</b> Open <code style="color:#00D2FF;background:rgba(0,0,0,0.5);padding:2px 6px;border-radius:4px">office-feud.html</code> in a text editor<br>
+      <b style="color:#FFD700">2.</b> Find and replace <code style="color:#FF8E99;background:rgba(0,0,0,0.5);padding:2px 6px;border-radius:4px">YOUR_SUPABASE_URL</code><br>
+      <b style="color:#FFD700">3.</b> Find and replace <code style="color:#FF8E99;background:rgba(0,0,0,0.5);padding:2px 6px;border-radius:4px">YOUR_SUPABASE_ANON_KEY</code><br>
+      <b style="color:#FFD700">4.</b> Save &amp; push to GitHub Pages
+    </div>
+    <div style="color:#4A5568;font-size:0.8rem">Keys found at: <b style="color:#7F8CAA">supabase.com → Project → Settings → API</b></div>
+  </div>`;
+  document.body.appendChild(d);
 }
 
 // ── REALTIME ──────────────────────────────────────────
@@ -1064,6 +1120,12 @@ document.getElementById('mod-check').addEventListener('change', function () {
 });
 
 async function doLogin() {
+  // Guard: Supabase not initialised yet (credentials missing)
+  if (!sb) {
+    showSetupOverlay();
+    return;
+  }
+
   const btn = document.getElementById('join-btn');
   if (btn.disabled) return;
 
@@ -1071,20 +1133,22 @@ async function doLogin() {
   const isMod = document.getElementById('mod-check').checked;
   const pw    = document.getElementById('mod-pw').value;
 
-  if (!name || name.length < 2)   { setMsg('login-msg', 'Name must be at least 2 characters.', 'error'); return; }
-  if (name.length > 30)            { setMsg('login-msg', 'Name too long (max 30 characters).', 'error'); return; }
-  if (isMod && pw !== MOD_PASSWORD){ setMsg('login-msg', '❌ Wrong moderator password!', 'error'); return; }
+  if (!name || name.length < 2)    { setMsg('login-msg', '⚠️ Name must be at least 2 characters.', 'error'); return; }
+  if (name.length > 30)             { setMsg('login-msg', '⚠️ Name too long (max 30 characters).', 'error'); return; }
+  if (isMod && pw !== MOD_PASSWORD) { setMsg('login-msg', '❌ Wrong moderator password!', 'error'); return; }
 
-  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Joining...';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Joining...';
   setMsg('login-msg', '', '');
 
   try {
     if (isMod) {
       const { data: em } = await sb.from('players').select('id').eq('is_moderator', true).maybeSingle();
-      if (em) { setMsg('login-msg','❌ Moderator seat already taken!','error'); resetBtn(); return; }
+      if (em) { setMsg('login-msg', '❌ Moderator seat is already taken!', 'error'); resetBtn(); return; }
     }
+
     const { data: ex } = await sb.from('players').select('id').eq('name', name).maybeSingle();
-    if (ex) { setMsg('login-msg', "😄 That name's taken! Try another.", 'error'); resetBtn(); return; }
+    if (ex) { setMsg('login-msg', "😄 That name's taken — try another!", 'error'); resetBtn(); return; }
 
     const { error } = await sb.from('players').insert({ name, score: 0, is_moderator: isMod });
     if (error) throw error;
@@ -1093,8 +1157,18 @@ async function doLogin() {
     localStorage.setItem('of_name', name);
     subscribe();
     await syncState();
+
   } catch (err) {
-    setMsg('login-msg', '❌ ' + (err.message || 'Could not join — try again.'), 'error');
+    const msg = err.message || 'Unknown error';
+    // Give a helpful hint for the most common errors
+    let hint = msg;
+    if (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed'))
+      hint = 'Network error — check your internet connection.';
+    else if (msg.includes('JWT') || msg.includes('key') || msg.includes('apikey'))
+      hint = 'Invalid Supabase key — double-check your anon key in the HTML file.';
+    else if (msg.includes('relation') || msg.includes('does not exist'))
+      hint = 'Table not found — make sure you ran setup.sql in Supabase SQL Editor.';
+    setMsg('login-msg', '❌ ' + hint, 'error');
     resetBtn();
   }
 }
