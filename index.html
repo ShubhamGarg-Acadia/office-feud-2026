@@ -497,187 +497,118 @@ label.mod-row{
 
 <script>
 // ════════════════════════════════════════
-// ⚙️  PASTE YOUR SUPABASE CREDENTIALS HERE
+// ⚙️  CONFIG
 // ════════════════════════════════════════
 const CFG = {
-  url: 'https://bphqkqgtsocoebfywftf.supabase.co',
-  key: 'sb_publishable_BYQ5H1Q0zwHrYDXOsOc43Q_U3dkJDf4',
-  mod: 'OFFICEFEUD2026',
-  qSecs: 15,
-  reconnBase: 2000
+  url:       'https://bphqkqgtsocoebfywftf.supabase.co',
+  key:       'sb_publishable_BYQ5H1Q0zwHrYDXOsOc43Q_U3dkJDf4',
+  mod:       'OFFICEFEUD2026',
+  qSecs:     15,
+  reconnBase: 2000   // exponential backoff base (ms)
 };
 // ════════════════════════════════════════
 
-// ── QUESTIONS ────────────────────────────
+// ── QUESTIONS (real data, 82 respondents, answers shuffled) ──
 const QS=[
   {q:"Name something people do during a boring video call.",a:[
-    {t:"Scroll social media",s:5},
-    {t:"Watch something else",s:3},
-    {t:"Mute and talk to someone else",s:1},
-    {t:"Turn off video and sneak away",s:0},
-    {t:"Online shopping",s:6},
-    {t:"Doodle or take fake notes",s:1},
-    {t:"Check emails/Slack",s:48},
-    {t:"Browse their phone",s:18}
-  ]},
+    {t:"Scroll social media",s:5},{t:"Watch something else",s:3},
+    {t:"Mute and talk to someone else",s:1},{t:"Turn off video and sneak away",s:0},
+    {t:"Online shopping",s:6},{t:"Doodle or take fake notes",s:1},
+    {t:"Check emails/Slack",s:48},{t:"Browse their phone",s:18}]},
   {q:"Name a phrase used way too much in meetings.",a:[
-    {t:"\"Let's take this offline\"",s:9},
-    {t:"\"At the end of the day\"",s:1},
-    {t:"\"Circle back\"",s:13},
-    {t:"\"Can everyone hear me?\"",s:26},
-    {t:"\"Bandwidth\"",s:9},
-    {t:"\"Move the needle\"",s:2},
-    {t:"\"Quick sync\"",s:4},
-    {t:"\"Align on this\"",s:18}
-  ]},
+    {t:"\"Let's take this offline\"",s:9},{t:"\"At the end of the day\"",s:1},
+    {t:"\"Circle back\"",s:13},{t:"\"Can everyone hear me?\"",s:26},
+    {t:"\"Bandwidth\"",s:9},{t:"\"Move the needle\"",s:2},
+    {t:"\"Quick sync\"",s:4},{t:"\"Align on this\"",s:18}]},
   {q:"Name a reason someone is late to a virtual meeting.",a:[
-    {t:"Everyone joins late anyway",s:5},
-    {t:"Kids or home interruption",s:3},
-    {t:"Getting coffee",s:6},
-    {t:"Forgot about it",s:4},
-    {t:"Internet/tech issues",s:7},
-    {t:"Couldn't find the link",s:0},
-    {t:"Wrong time zone",s:0},
-    {t:"Previous meeting ran long",s:57}
-  ]},
+    {t:"Everyone joins late anyway",s:5},{t:"Kids or home interruption",s:3},
+    {t:"Getting coffee",s:6},{t:"Forgot about it",s:4},
+    {t:"Internet/tech issues",s:7},{t:"Couldn't find the link",s:0},
+    {t:"Wrong time zone",s:0},{t:"Previous meeting ran long",s:57}]},
   {q:"Name your go-to work-from-home snack.",a:[
-    {t:"Protein bar",s:7},
-    {t:"Fruit",s:9},
-    {t:"Coffee/Tea",s:49},
-    {t:"Bread/Toast",s:3},
-    {t:"Chips",s:3},
-    {t:"Chocolate",s:3},
-    {t:"Biscuits/Cookies",s:3},
-    {t:"Nuts",s:5}
-  ]},
+    {t:"Protein bar",s:7},{t:"Fruit",s:9},{t:"Coffee/Tea",s:49},
+    {t:"Bread/Toast",s:3},{t:"Chips",s:3},{t:"Chocolate",s:3},
+    {t:"Biscuits/Cookies",s:3},{t:"Nuts",s:5}]},
   {q:"Name the biggest distraction when working from home.",a:[
-    {t:"Napping",s:5},
-    {t:"Delivery/doorbell",s:13},
-    {t:"Neighbors",s:2},
-    {t:"Family or kids",s:12},
-    {t:"Pets",s:15},
-    {t:"Phone/social media",s:24},
-    {t:"TV in the background",s:4},
-    {t:"Household chores",s:7}
-  ]},
+    {t:"Napping",s:5},{t:"Delivery/doorbell",s:13},{t:"Neighbors",s:2},
+    {t:"Family or kids",s:12},{t:"Pets",s:15},{t:"Phone/social media",s:24},
+    {t:"TV in the background",s:4},{t:"Household chores",s:7}]},
   {q:"Name the best part about working remotely.",a:[
-    {t:"Home-cooked food",s:2},
-    {t:"Better focus",s:8},
-    {t:"My own music/playlist",s:2},
-    {t:"More family time",s:8},
-    {t:"No commute",s:30},
-    {t:"No office politics",s:0},
-    {t:"Flexible hours",s:20},
-    {t:"Work in pajamas/shorts",s:12}
-  ]},
+    {t:"Home-cooked food",s:2},{t:"Better focus",s:8},{t:"My own music/playlist",s:2},
+    {t:"More family time",s:8},{t:"No commute",s:30},{t:"No office politics",s:0},
+    {t:"Flexible hours",s:20},{t:"Work in pajamas/shorts",s:12}]},
   {q:"Name something people fake on video calls.",a:[
-    {t:"Being \"just about to reply\"",s:7},
-    {t:"Smiling",s:11},
-    {t:"Paying attention",s:33},
-    {t:"Enthusiasm",s:5},
-    {t:"Looking busy",s:6},
-    {t:"Laughing at the right time",s:9},
-    {t:"Taking notes",s:5},
-    {t:"Bad internet to avoid speaking",s:6}
-  ]},
+    {t:"Being \"just about to reply\"",s:7},{t:"Smiling",s:11},
+    {t:"Paying attention",s:33},{t:"Enthusiasm",s:5},{t:"Looking busy",s:6},
+    {t:"Laughing at the right time",s:9},{t:"Taking notes",s:5},
+    {t:"Bad internet to avoid speaking",s:6}]},
   {q:"Name the first thing you see on your work desk right now.",a:[
-    {t:"Charger/cables",s:5},
-    {t:"Sticky notes",s:0},
-    {t:"A snack",s:1},
-    {t:"Water bottle",s:10},
-    {t:"Headphones",s:8},
-    {t:"Coffee mug",s:29},
-    {t:"Phone",s:9},
-    {t:"Notebook/Notepad",s:20}
-  ]},
+    {t:"Charger/cables",s:5},{t:"Sticky notes",s:0},{t:"A snack",s:1},
+    {t:"Water bottle",s:10},{t:"Headphones",s:8},{t:"Coffee mug",s:29},
+    {t:"Phone",s:9},{t:"Notebook/Notepad",s:20}]},
   {q:"Name a Slack reaction you use all the time.",a:[
-    {t:"\u2764\ufe0f Heart",s:19},
-    {t:"\ud83d\ude02 Laugh",s:5},
-    {t:"\ud83d\udd25 Fire",s:0},
-    {t:"\ud83d\ude4c Raising Hands",s:23},
-    {t:"\ud83c\udf89 Tada/Party",s:1},
-    {t:"\ud83d\udc4d Thumbs Up",s:23},
-    {t:"\ud83d\udc40 Eyes",s:3},
-    {t:"\u2705 Check",s:8}
-  ]},
+    {t:"\u2764\ufe0f Heart",s:19},{t:"\ud83d\ude02 Laugh",s:5},{t:"\ud83d\udd25 Fire",s:0},
+    {t:"\ud83d\ude4c Raising Hands",s:23},{t:"\ud83c\udf89 Tada/Party",s:1},
+    {t:"\ud83d\udc4d Thumbs Up",s:23},{t:"\ud83d\udc40 Eyes",s:3},{t:"\u2705 Check",s:8}]},
   {q:"Name what you do in the last 5 minutes before logging off.",a:[
-    {t:"Close all my open tabs",s:4},
-    {t:"Send a final email",s:4},
-    {t:"Update task manager/to-do list",s:8},
-    {t:"Write tomorrow's plan",s:7},
-    {t:"Say bye on Slack/Teams",s:0},
-    {t:"Check Slack one last time",s:48},
-    {t:"Ghost everyone and close laptop",s:4},
-    {t:"\"Thank God the day is over\" \ud83d\ude05",s:7}
-  ]},
+    {t:"Close all my open tabs",s:4},{t:"Send a final email",s:4},
+    {t:"Update task manager/to-do list",s:8},{t:"Write tomorrow's plan",s:7},
+    {t:"Say bye on Slack/Teams",s:0},{t:"Check Slack one last time",s:48},
+    {t:"Ghost everyone and close laptop",s:4},{t:"\"Thank God the day is over\" \ud83d\ude05",s:7}]},
   {q:"Name a tool or app that sends you way too many notifications.",a:[
-    {t:"LinkedIn",s:3},
-    {t:"Slack",s:39},
-    {t:"Google Calendar",s:5},
-    {t:"WhatsApp/iMessage",s:3},
-    {t:"Asana",s:22},
-    {t:"Phone calls",s:1},
-    {t:"Instagram",s:0},
-    {t:"Gmail",s:9}
-  ]},
+    {t:"LinkedIn",s:3},{t:"Slack",s:39},{t:"Google Calendar",s:5},
+    {t:"WhatsApp/iMessage",s:3},{t:"Asana",s:22},{t:"Phone calls",s:1},
+    {t:"Instagram",s:0},{t:"Gmail",s:9}]},
   {q:"Name something you'd add to your home office if money were no object.",a:[
-    {t:"A dedicated home office room",s:20},
-    {t:"Faster internet",s:1},
-    {t:"A treadmill desk",s:13},
-    {t:"Better lighting or ring light",s:2},
-    {t:"Better chair or standing desk",s:19},
-    {t:"A coffee machine",s:5},
-    {t:"Soundproofing",s:7},
-    {t:"Bigger or multiple monitors",s:15}
-  ]},
-  {q:"Name something you have open in your browser right now that has nothing to do with work.",a:[
-    {t:"Personal email",s:23},
-    {t:"Online shopping",s:13},
-    {t:"News website",s:15},
-    {t:"YouTube",s:17},
-    {t:"Online games",s:0},
-    {t:"Checking stocks/finances",s:2},
-    {t:"Sports/Fantasy sports",s:5},
-    {t:"Social media",s:7}
-  ]},
+    {t:"A dedicated home office room",s:20},{t:"Faster internet",s:1},
+    {t:"A treadmill desk",s:13},{t:"Better lighting or ring light",s:2},
+    {t:"Better chair or standing desk",s:19},{t:"A coffee machine",s:5},
+    {t:"Soundproofing",s:7},{t:"Bigger or multiple monitors",s:15}]},
+  {q:"Name something you have open in your browser that has nothing to do with work.",a:[
+    {t:"Personal email",s:23},{t:"Online shopping",s:13},{t:"News website",s:15},
+    {t:"YouTube",s:17},{t:"Online games",s:0},{t:"Checking stocks/finances",s:2},
+    {t:"Sports/Fantasy sports",s:5},{t:"Social media",s:7}]},
   {q:"Name the most dreaded words a manager can say on a Monday morning.",a:[
-    {t:"\"The deadline has moved up\"",s:8},
-    {t:"\"I have feedback on your work\"",s:6},
-    {t:"\"Let's do a team alignment\"",s:2},
-    {t:"\"We're pivoting on this\"",s:11},
-    {t:"\"The client wants changes\"",s:15},
-    {t:"\"Revisit Friday's deliverable\"",s:1},
-    {t:"\"Can you send a report by EOD?\"",s:15},
-    {t:"\"Can we jump on a quick call?\"",s:24}
-  ]},
+    {t:"\"The deadline has moved up\"",s:8},{t:"\"I have feedback on your work\"",s:6},
+    {t:"\"Let's do a team alignment\"",s:2},{t:"\"We're pivoting on this\"",s:11},
+    {t:"\"The client wants changes\"",s:15},{t:"\"Revisit Friday's deliverable\"",s:1},
+    {t:"\"Can you send a report by EOD?\"",s:15},{t:"\"Can we jump on a quick call?\"",s:24}]},
   {q:"Name something your team says will take \"just 5 minutes\" but never does.",a:[
-    {t:"A quick call or catch-up",s:34},
-    {t:"Writing copy or a caption",s:0},
-    {t:"Setting up a new tool/dashboard",s:2},
-    {t:"Reviewing a deck or document",s:18},
-    {t:"A \"minor\" client amend",s:14},
-    {t:"Fixing a bug or tracking issue",s:2},
-    {t:"One small data change",s:5},
-    {t:"A brief brainstorm",s:7}
-  ]}
+    {t:"A quick call or catch-up",s:34},{t:"Writing copy or a caption",s:0},
+    {t:"Setting up a new tool/dashboard",s:2},{t:"Reviewing a deck or document",s:18},
+    {t:"A \"minor\" client amend",s:14},{t:"Fixing a bug or tracking issue",s:2},
+    {t:"One small data change",s:5},{t:"A brief brainstorm",s:7}]}
 ];
 const LT=['A','B','C','D','E','F','G','H'];
+const CHECKPOINTS=[4,9,14]; // Q5, Q10, Q15
+const LAST_Q=14;
 
 // ── STATE ─────────────────────────────────
 let sb=null, me=null, gs=null;
-let channel=null, timerID=null;
+let channel=null, timerID=null, heartbeatID=null;
 let answered=false, myIdx=-1, myEarned=0;
 let prevLb=[], submitting=false;
 let reconnDelay=CFG.reconnBase;
+let stateSeq=0;         // guards against stale async state transitions
+let handlingState=false; // prevents concurrent handleState executions
+let connBadCount=0;     // only show banner after multiple failures
+let lobbyDebounce=null, onlineDebounce=null, ansCountDebounce=null;
 
 // ── HELPERS ───────────────────────────────
 const $=id=>document.getElementById(id);
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-function setStatus(msg,type){
-  const el=$('login-status');
-  el.className=type; el.innerHTML=msg;
-}
+function setStatus(msg,type){const el=$('login-status');el.className=type;el.innerHTML=msg}
 function clearStatus(){$('login-status').className='';$('login-status').innerHTML=''}
+
+// Debounce factory — prevents thundering herd on mass realtime events
+function debounce(fn,ms){
+  let t=null;
+  return(...args)=>{clearTimeout(t);t=setTimeout(()=>fn(...args),ms)};
+}
+
+// Jitter — adds random ms to reconnect so 50 clients don't all retry simultaneously
+function jitter(base){return base+Math.floor(Math.random()*base*0.5)}
+
 let toastT;
 function toast(m,d=2600){const e=$('toast');e.textContent=m;e.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('show'),d)}
 
@@ -685,26 +616,32 @@ function show(n){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=$(`screen-${n}`);
   if(el){el.classList.add('active');window.scrollTo(0,0)}
-  if(n==='lobby')refreshLobby();
+  if(n==='lobby') debouncedLobby();
 }
+
+// Debounced versions of expensive refresh functions
+const debouncedLobby   = debounce(refreshLobby,400);
+const debouncedOnline  = debounce(updateOnline,800);
+const debouncedAnsCnt  = debounce(updateAnsCount,600);
 
 // ── BOOT ──────────────────────────────────
 async function boot(){
-  // Show the login screen immediately — never block on a blank page
-  show('login');
+  show('login'); // Always show login first — never block on blank page
 
-  // Validate credentials before doing anything
   if(!CFG.url||CFG.url.includes('YOUR_SUPABASE')||
      !CFG.key||CFG.key.includes('YOUR_SUPABASE')){
-    setStatus('⚙️ <strong>Setup needed:</strong> Open this HTML file in a text editor and replace <code>YOUR_SUPABASE_URL</code> and <code>YOUR_SUPABASE_ANON_KEY</code> with your actual Supabase credentials, then re-upload to GitHub.','info');
+    setStatus(`⚙️ <strong>Setup needed:</strong> Open this HTML file in a text editor and replace
+      <code>YOUR_SUPABASE_URL</code> and <code>YOUR_SUPABASE_ANON_KEY</code>
+      with your actual Supabase credentials, then re-upload to GitHub.`,'info');
     $('join-btn').disabled=true;
     return;
   }
 
-  // Init client
   try{
     sb=window.supabase.createClient(CFG.url,CFG.key,{
-      realtime:{timeout:30000},db:{schema:'public'}
+      realtime:{timeout:30000,params:{eventsPerSecond:10}},
+      db:{schema:'public'},
+      auth:{persistSession:false,autoRefreshToken:false}
     });
   }catch(e){
     setStatus('❌ Could not initialise Supabase: '+esc(e.message),'error');
@@ -712,32 +649,32 @@ async function boot(){
     return;
   }
 
-  // Test connection — show user exactly what's wrong if it fails
+  // Quick connection test
   try{
     const{error}=await sb.from('game_state').select('id').eq('id',1).maybeSingle();
     if(error) throw error;
   }catch(e){
-    const m=e.message||'Unknown error';
+    const m=e.message||'';
     let hint=m;
-    if(m.includes('fetch')||m.includes('Failed')||m.includes('network'))
-      hint='Cannot reach Supabase — check your internet connection.';
-    else if(m.includes('401')||m.includes('JWT')||m.includes('apikey')||m.includes('Invalid API'))
-      hint='Invalid Supabase key — copy the <strong>anon public</strong> key from Project Settings → API.';
+    if(m.includes('fetch')||m.includes('Failed')||m.includes('network')||m.includes('ERR_'))
+      hint='Cannot reach Supabase. Check your internet connection.';
+    else if(m.includes('401')||m.includes('JWT')||m.includes('apikey')||m.includes('Invalid'))
+      hint='Invalid Supabase key. Copy the <strong>anon public</strong> key from Project Settings → API.';
     else if(m.includes('relation')||m.includes('does not exist'))
-      hint='Tables not found — run <strong>setup.sql</strong> in the Supabase SQL Editor first.';
-    setStatus('❌ Connection error: '+hint+'<br><small style="opacity:0.7">Raw: '+esc(m)+'</small>','error');
+      hint='Tables not found. Run <strong>setup.sql</strong> in the Supabase SQL Editor first.';
+    setStatus('❌ '+hint,'error');
     $('join-btn').disabled=true;
     return;
   }
 
-  // Connection OK — try to restore session
-  setStatus('',''); // clear
+  // Try session restore from localStorage
   const saved=localStorage.getItem('of_name');
   if(saved){
     try{
       const{data}=await sb.from('players').select('*').eq('name',saved).maybeSingle();
       if(data){
         me={name:data.name,isMod:data.is_moderator,score:data.score||0};
+        startHeartbeat();
         subscribe();
         await syncState();
         return;
@@ -745,68 +682,129 @@ async function boot(){
     }catch(_){}
     localStorage.removeItem('of_name');
   }
-  // Ready — show clean login
+  // Clean login ready
 }
 
 // ── REALTIME ──────────────────────────────
 function subscribe(){
-  if(channel){try{sb.removeChannel(channel)}catch(_){} channel=null}
-  channel=sb.channel('of-v4')
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'game_state',filter:'id=eq.1'},p=>handleState(p.new))
-    .on('postgres_changes',{event:'*',schema:'public',table:'players'},()=>{refreshLobby();updateOnline()})
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'answers'},()=>{if(me?.isMod)updateAnsCount()})
+  // Fully clean up old channel before creating new one
+  if(channel){
+    try{sb.removeChannel(channel)}catch(_){}
+    channel=null;
+  }
+
+  channel=sb.channel('of-game-v5')
+    // Only listen to game_state updates (the only thing that drives all clients)
+    .on('postgres_changes',
+        {event:'UPDATE',schema:'public',table:'game_state',filter:'id=eq.1'},
+        p=>queueState(p.new))
+    // Players table: only fire debounced refresh (not raw, expensive handler)
+    .on('postgres_changes',
+        {event:'*',schema:'public',table:'players'},
+        ()=>{debouncedLobby();debouncedOnline()})
+    // Answers: only moderator needs count, debounced
+    .on('postgres_changes',
+        {event:'INSERT',schema:'public',table:'answers'},
+        ()=>{if(me?.isMod) debouncedAnsCnt()})
     .subscribe(status=>{
-      const bad=status==='CHANNEL_ERROR'||status==='TIMED_OUT';
-      $('conn-bar').classList.toggle('show',bad);
-      $('odot').classList.toggle('red',bad);
-      if(status==='SUBSCRIBED') reconnDelay=CFG.reconnBase;
-      if(bad){setTimeout(subscribe,reconnDelay);reconnDelay=Math.min(reconnDelay*2,30000)}
+      if(status==='SUBSCRIBED'){
+        reconnDelay=CFG.reconnBase;
+        connBadCount=0;
+        $('conn-bar').classList.remove('show');
+        $('odot').classList.remove('red');
+      }
+      if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
+        connBadCount++;
+        // Only show banner after 2 consecutive failures to avoid false alarms
+        if(connBadCount>=2){
+          $('conn-bar').classList.add('show');
+          $('odot').classList.add('red');
+        }
+        // Jitter prevents 50 clients from hammering Supabase simultaneously
+        const delay=jitter(reconnDelay);
+        setTimeout(subscribe,delay);
+        reconnDelay=Math.min(reconnDelay*2,30000);
+      }
     });
+}
+
+// Prevent concurrent state handling with a queue
+let stateQueue=null;
+async function queueState(newState){
+  stateQueue=newState;
+  if(handlingState) return; // another call will pick up stateQueue when done
+  handlingState=true;
+  while(stateQueue){
+    const s=stateQueue;
+    stateQueue=null;
+    await handleState(s);
+  }
+  handlingState=false;
 }
 
 async function syncState(){
   try{
     const{data}=await sb.from('game_state').select('*').eq('id',1).maybeSingle();
-    if(data) await handleState(data); else show('lobby');
-    updateOnline();
+    if(data) await queueState(data); else show('lobby');
+    debouncedOnline();
   }catch(_){show('lobby')}
 }
 
+// ── HEARTBEAT — keeps WebSocket alive on mobile/iOS ──
+function startHeartbeat(){
+  stopHeartbeat();
+  // Ping the DB every 25s so iOS doesn't kill the WebSocket (kills at ~60s idle)
+  heartbeatID=setInterval(async()=>{
+    try{await sb.from('game_state').select('id').eq('id',1).maybeSingle()}catch(_){}
+  },25000);
+}
+function stopHeartbeat(){if(heartbeatID){clearInterval(heartbeatID);heartbeatID=null}}
+
+// Reconnect when tab regains focus (handles mobile app-switching)
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&sb&&me){
+    subscribe();    // re-establish realtime
+    syncState();    // re-sync game state
+  }
+});
+
 // ── STATE MACHINE ─────────────────────────
 async function handleState(state){
+  if(!state) return;
   gs=state;
   const{phase,current_question:qi=0}=state;
-  if(phase==='lobby'){show('lobby');refreshLobby();return}
+
+  if(phase==='lobby'){show('lobby');return}
+
   if(phase==='question'){
-    answered=false;myIdx=-1;myEarned=0;
+    // Reset per-question state
+    answered=false;myIdx=-1;myEarned=0;submitting=false;
+    // Sync from DB in case of refresh/reconnect
     try{
-      const{data:a}=await sb.from('answers').select('*').eq('player_name',me.name).eq('question_index',qi).maybeSingle();
+      const{data:a}=await sb.from('answers')
+        .select('answer_index,multiplied_score')
+        .eq('player_name',me.name).eq('question_index',qi).maybeSingle();
       if(a){answered=true;myIdx=a.answer_index;myEarned=a.multiplied_score}
     }catch(_){}
-    submitting=false;
     renderQ(qi,state.question_start_time);
     return;
   }
+
   if(phase==='reveal'){stopTimer();await renderReveal(qi);return}
   if(phase==='leaderboard'){await renderLb(qi);return}
   if(phase==='end'){await renderEnd();return}
 }
 
 // ── LOGIN ─────────────────────────────────
-// Wire up checkbox toggle
 document.getElementById('mod-check').addEventListener('change',function(){
   $('mod-pw-wrap').style.display=this.checked?'block':'none';
 });
-// Wire up Enter key on both inputs
 ['name-input','mod-pw'].forEach(id=>{
   $(id).addEventListener('keyup',e=>{if(e.key==='Enter')doLogin()});
 });
 
 async function doLogin(){
-  if(!sb){
-    setStatus('❌ Not connected to Supabase. Refresh the page and check your credentials.','error');
-    return;
-  }
+  if(!sb){setStatus('❌ Not connected. Refresh the page.','error');return}
   const btn=$('join-btn');
   if(btn.disabled) return;
 
@@ -814,62 +812,50 @@ async function doLogin(){
   const isMod=$('mod-check').checked;
   const pw=$('mod-pw').value;
 
-  // Client-side validation
-  if(!name||name.length<2){setStatus('⚠️ Name must be at least 2 characters.','error');return}
-  if(name.length>30){setStatus('⚠️ Name too long (max 30 characters).','error');return}
+  if(!name||name.length<2){setStatus('⚠️ Name needs at least 2 characters.','error');return}
+  if(name.length>30){setStatus('⚠️ Name too long (max 30 chars).','error');return}
   if(isMod&&pw!==CFG.mod){setStatus('❌ Wrong moderator password!','error');return}
 
-  // Disable button and show spinner
   btn.disabled=true;
   btn.innerHTML='<span class="spin"></span> Joining...';
   setStatus('Connecting...','info');
 
   try{
-    // Check moderator slot
     if(isMod){
       const{data:em}=await sb.from('players').select('id').eq('is_moderator',true).maybeSingle();
-      if(em){setStatus('❌ Moderator seat is already taken!','error');resetJoinBtn();return}
+      if(em){setStatus('❌ Moderator seat already taken!','error');resetJoinBtn();return}
     }
-
-    // Check unique name
     const{data:ex}=await sb.from('players').select('id').eq('name',name).maybeSingle();
-    if(ex){setStatus("😄 That name's taken — try another!",'error');resetJoinBtn();return}
+    if(ex){setStatus("😄 That name's taken — pick another!",'error');resetJoinBtn();return}
 
-    // Insert player
     const{error}=await sb.from('players').insert({name,score:0,is_moderator:isMod});
     if(error) throw error;
 
-    // Success
     me={name,isMod,score:0};
     localStorage.setItem('of_name',name);
     clearStatus();
+    startHeartbeat();
     subscribe();
     await syncState();
 
   }catch(err){
-    const m=err.message||'Unknown error';
-    let hint=m;
-    if(m.includes('fetch')||m.includes('Failed')||m.includes('network'))
-      hint='Network error — check your connection.';
-    else if(m.includes('401')||m.includes('JWT')||m.includes('apikey'))
-      hint='Auth error — check your Supabase anon key.';
-    else if(m.includes('relation')||m.includes('does not exist'))
-      hint='Tables missing — run setup.sql in Supabase SQL Editor.';
-    else if(m.includes('duplicate')||m.includes('unique'))
-      hint="That name's already taken — try another!";
+    const m=err.message||'';
+    let hint=m||'Could not join — try again.';
+    if(m.includes('fetch')||m.includes('Failed')||m.includes('network')) hint='Network error. Check your connection.';
+    else if(m.includes('401')||m.includes('JWT'))  hint='Auth error. Check your Supabase anon key.';
+    else if(m.includes('relation')||m.includes('does not exist')) hint='Tables missing — run setup.sql.';
+    else if(m.includes('duplicate')||m.includes('unique')) hint="That name's taken — pick another!";
     setStatus('❌ '+esc(hint),'error');
     resetJoinBtn();
   }
 }
-function resetJoinBtn(){
-  const b=$('join-btn');b.disabled=false;b.innerHTML='Join the Game →';
-}
+function resetJoinBtn(){const b=$('join-btn');b.disabled=false;b.innerHTML='Join the Game →'}
 
 // ── LOBBY ─────────────────────────────────
 async function refreshLobby(){
-  if(!$('screen-lobby').classList.contains('active')) return;
+  if(!$('screen-lobby').classList.contains('active')||!sb) return;
   try{
-    const{data}=await sb.from('players').select('*').order('joined_at');
+    const{data}=await sb.from('players').select('name,is_moderator').order('joined_at');
     if(!data) return;
     $('lobby-count').textContent=data.length;
     $('lobby-players').innerHTML=data.map(p=>
@@ -884,13 +870,20 @@ async function doStart(){
   const btn=$('start-btn');
   btn.disabled=true;btn.innerHTML='<span class="spin"></span> Starting...';
   try{
-    answered=false;myIdx=-1;myEarned=0;
-    await sb.from('game_state').update({phase:'question',current_question:0,question_start_time:new Date().toISOString()}).eq('id',1);
+    await sb.from('game_state').update({
+      phase:'question',current_question:0,
+      question_start_time:new Date().toISOString()
+    }).eq('id',1);
   }catch(_){btn.disabled=false;btn.innerHTML='🚀 Start Game!';toast('❌ Start failed — try again')}
 }
 
 // ── RESET ─────────────────────────────────
-function openReset(){$('reset-modal').classList.add('show');$('reset-msg').innerHTML='';$('reset-btn').disabled=false;$('reset-btn').innerHTML='Yes, Reset'}
+function openReset(){
+  $('reset-modal').classList.add('show');
+  $('reset-msg').innerHTML='';
+  $('reset-btn').disabled=false;
+  $('reset-btn').innerHTML='Yes, Reset';
+}
 function closeReset(){$('reset-modal').classList.remove('show')}
 
 async function doReset(){
@@ -899,13 +892,18 @@ async function doReset(){
   try{
     const{error:rpcErr}=await sb.rpc('reset_game');
     if(rpcErr){
-      // Fallback: direct deletes
-      await sb.from('answers').delete().gte('question_index',-1);
-      await sb.from('players').delete().gte('score',-1);
+      await Promise.all([
+        sb.from('answers').delete().gte('question_index',-1),
+        sb.from('players').delete().gte('score',-1)
+      ]);
     }
-    await sb.from('game_state').update({phase:'lobby',current_question:0,question_start_time:new Date().toISOString()}).eq('id',1);
+    await sb.from('game_state').update({
+      phase:'lobby',current_question:0,
+      question_start_time:new Date().toISOString()
+    }).eq('id',1);
     localStorage.removeItem('of_name');
     me=null;answered=false;myIdx=-1;prevLb=[];submitting=false;
+    stopHeartbeat();
     closeReset();
     toast('✅ Game reset! All players must rejoin.');
     setTimeout(()=>window.location.reload(),800);
@@ -915,7 +913,7 @@ async function doReset(){
   }
 }
 
-// ── QUESTION ──────────────────────────────
+// ── QUESTION SCREEN ───────────────────────
 function renderQ(qi,startStr){
   show('question');
   const q=QS[qi];
@@ -928,7 +926,7 @@ function renderQ(qi,startStr){
     `<div class="qdot ${i<qi?'done':i===qi?'cur':''}"></div>`
   ).join('');
 
-  // Answer buttons
+  // Answer buttons — shown in shuffled order, NO score visible
   $('a-grid').innerHTML=q.a.map((a,i)=>
     `<button class="abtn ${answered&&myIdx===i?'sel':''}"
        id="ab${i}" onclick="pickAns(${i})" ${answered?'disabled':''}>
@@ -938,7 +936,7 @@ function renderQ(qi,startStr){
 
   $('lock-msg').style.display=answered?'flex':'none';
   $('mod-bar').style.display=me.isMod?'flex':'none';
-  if(me.isMod) updateAnsCount();
+  if(me.isMod) debouncedAnsCnt();
 
   const elapsed=(Date.now()-new Date(startStr).getTime())/1000;
   if(elapsed>=CFG.qSecs&&!answered) disableAnswers();
@@ -963,11 +961,12 @@ function startTimer(startStr){
       if(!answered&&!submitting){
         answered=true;submitting=true;
         disableAnswers();
-        saveAns(-1,0,CFG.qSecs).finally(()=>submitting=false);
+        saveAns(-1,0,CFG.qSecs).finally(()=>{submitting=false});
       }
     }
   }
-  tick();timerID=setInterval(tick,200);
+  tick();
+  timerID=setInterval(tick,200);
 }
 function stopTimer(){if(timerID){clearInterval(timerID);timerID=null}}
 function disableAnswers(){
@@ -977,39 +976,51 @@ function disableAnswers(){
 
 async function pickAns(idx){
   if(answered||submitting) return;
+  // Immediately block — prevents double-tap race condition
   submitting=true;answered=true;
   const elapsed=(Date.now()-new Date(gs.question_start_time).getTime())/1000;
   if(elapsed>=CFG.qSecs){submitting=false;return}
+
   myIdx=idx;
   const raw=QS[gs.current_question].a[idx].s;
   const mult=elapsed<=5?1.5:elapsed<=10?1.2:1.0;
   myEarned=Math.round(raw*mult);
+
+  // Optimistic UI
   $(`ab${idx}`)?.classList.add('sel');
   disableAnswers();
   toast('⚡ Answer locked in!');
+
   await saveAns(idx,myEarned,elapsed);
   submitting=false;
 }
 
 async function saveAns(idx,earned,elapsed){
   const qi=gs.current_question;
-  const ns=me.score+earned;
   try{
-    await sb.from('answers').upsert({
-      player_name:me.name,question_index:qi,answer_index:idx,
+    // UPSERT — safe against any duplicate submission race
+    const{error}=await sb.from('answers').upsert({
+      player_name:me.name, question_index:qi,
+      answer_index:idx,
       raw_score:idx===-1?0:QS[qi].a[idx].s,
       multiplied_score:earned,
       time_taken:Math.round(elapsed*10)/10
     },{onConflict:'player_name,question_index'});
-    me.score=ns;
+    if(error) throw error;
+
+    // Update score in DB and local state atomically
+    const newScore=me.score+earned;
+    await sb.from('players').update({score:newScore}).eq('name',me.name);
+    me.score=newScore;
+
     const sv=$('q-score');
-    if(sv){sv.textContent=ns;sv.classList.remove('pop');void sv.offsetWidth;sv.classList.add('pop')}
-    await sb.from('players').update({score:ns}).eq('name',me.name);
-  }catch(e){console.warn('saveAns:',e.message)}
+    if(sv){sv.textContent=newScore;sv.classList.remove('pop');void sv.offsetWidth;sv.classList.add('pop')}
+
+  }catch(e){console.warn('saveAns failed:',e.message)}
 }
 
 async function updateAnsCount(){
-  if(!gs) return;
+  if(!gs||!me?.isMod) return;
   try{
     const qi=gs.current_question;
     const[r1,r2]=await Promise.all([
@@ -1023,36 +1034,56 @@ async function updateAnsCount(){
 
 async function doSkip(){
   stopTimer();
-  try{await sb.from('game_state').update({phase:'reveal',current_question:gs.current_question}).eq('id',1)}
-  catch(_){toast('❌ Try again')}
+  try{
+    await sb.from('game_state').update({
+      phase:'reveal',current_question:gs.current_question
+    }).eq('id',1);
+  }catch(_){toast('❌ Try again')}
 }
 
-// ── REVEAL ────────────────────────────────
+async function updateOnline(){
+  if(!sb) return;
+  try{
+    const{count}=await sb.from('players').select('*',{count:'exact',head:true});
+    $('ocount').textContent=`${count||0} online`;
+  }catch(_){}
+}
+
+// ── REVEAL SCREEN ─────────────────────────
 async function renderReveal(qi){
   show('reveal');stopTimer();
   const q=QS[qi];
   $('reveal-q').textContent=q.q;
 
+  // Sync answer from DB if needed (page refresh / reconnect during reveal)
   if(!answered){
     try{
-      const{data:a}=await sb.from('answers').select('*').eq('player_name',me.name).eq('question_index',qi).maybeSingle();
+      const{data:a}=await sb.from('answers')
+        .select('answer_index,multiplied_score')
+        .eq('player_name',me.name).eq('question_index',qi).maybeSingle();
       if(a){myIdx=a.answer_index;myEarned=a.multiplied_score;answered=true}
     }catch(_){}
   }
+  // Always get authoritative score from DB
   try{
     const{data:p}=await sb.from('players').select('score').eq('name',me.name).maybeSingle();
     if(p) me.score=p.score||0;
   }catch(_){}
   $('rev-total').textContent=me.score;
 
+  // ── BUG FIX: sort by score DESC for display (highest = #1) ──
+  // Also find the top-scoring answer index in the ORIGINAL array
+  const sorted=[...q.a].map((a,origIdx)=>({...a,origIdx})).sort((x,y)=>y.s-x.s);
+  const topScore=sorted[0].s;
+  const myIsTop=myIdx>=0&&q.a[myIdx].s===topScore&&topScore>0;
+
   const mc=$('mycard');
   if(myIdx>=0&&myIdx<q.a.length){
     $('my-ans').textContent=q.a[myIdx].t;
     $('my-pts').textContent=`+${myEarned||0}`;
-    const top=myIdx===0;
-    mc.className='mycard '+(top?'gold':'cyan');
-    $('top-badge').style.display=top?'inline-block':'none';
-    if(top) doConfetti(30);
+    mc.className='mycard '+(myIsTop?'gold':'cyan');
+    $('top-badge').style.display=myIsTop?'inline-block':'none';
+    if(myIsTop) doConfetti(30);
   }else{
     $('my-ans').textContent='(No answer — time ran out)';
     $('my-pts').textContent='+0';
@@ -1060,24 +1091,32 @@ async function renderReveal(qi){
     $('top-badge').style.display='none';
   }
 
-  const max=Math.max(...q.a.map(a=>a.s),1);
-  $('fboard').innerHTML=q.a.map((a,i)=>
-    `<div class="frow" id="fr${i}">
-      <div class="frank r${Math.min(i+1,4)}">${i+1}</div>
-      <div class="fmid"><div class="ffill" id="ff${i}" style="width:0%"></div><span class="fans">${esc(a.t)}</span></div>
+  // Build board sorted by score (highest first) — classic Family Feud style
+  const maxS=Math.max(topScore,1);
+  $('fboard').innerHTML=sorted.map((a,rank)=>
+    `<div class="frow" id="fr${rank}">
+      <div class="frank r${Math.min(rank+1,4)}">${rank+1}</div>
+      <div class="fmid">
+        <div class="ffill" id="ff${rank}" style="width:0%"></div>
+        <span class="fans">${esc(a.t)}</span>
+      </div>
       <div class="fscore">${a.s}</div>
     </div>`
   ).join('');
 
-  q.a.forEach((a,i)=>{
+  sorted.forEach((a,rank)=>{
     setTimeout(()=>{
-      const row=$(`fr${i}`);if(!row)return;
+      const row=$(`fr${rank}`);if(!row)return;
       row.classList.add('flip');
-      setTimeout(()=>{const f=$(`ff${i}`);if(f)f.style.width=`${(a.s/max)*100}%`},200);
-    },i*200);
+      setTimeout(()=>{
+        const f=$(`ff${rank}`);
+        if(f) f.style.width=`${(a.s/maxS)*100}%`;
+      },200);
+    },rank*200);
   });
 
-  const isCP=[4,9,14].includes(qi),isLast=qi===14;
+  const isLast=qi===LAST_Q;
+  const isCP=CHECKPOINTS.includes(qi);
   $('rev-mod').style.display=me.isMod?'block':'none';
   $('rev-wait').style.display=me.isMod?'none':'block';
   if(me.isMod){
@@ -1090,18 +1129,24 @@ async function modNext(){
   if(!me?.isMod) return;
   const btn=$('rev-next');
   if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span>'}
-  const qi=gs.current_question,isCP=[4,9,14].includes(qi);
+  const qi=gs.current_question;
+  const isCP=CHECKPOINTS.includes(qi);
   try{
-    if(isCP||qi===14){
+    if(isCP||qi===LAST_Q){
       await sb.from('game_state').update({phase:'leaderboard',current_question:qi}).eq('id',1);
     }else{
-      answered=false;myIdx=-1;myEarned=0;
-      await sb.from('game_state').update({phase:'question',current_question:qi+1,question_start_time:new Date().toISOString()}).eq('id',1);
+      await sb.from('game_state').update({
+        phase:'question',current_question:qi+1,
+        question_start_time:new Date().toISOString()
+      }).eq('id',1);
     }
-  }catch(_){if(btn){btn.disabled=false;btn.textContent='Retry'}toast('❌ Try again')}
+  }catch(_){
+    if(btn){btn.disabled=false;btn.textContent='↩️ Retry'}
+    toast('❌ Try again');
+  }
 }
 
-// ── LEADERBOARD ───────────────────────────
+// ── LEADERBOARD SCREEN ────────────────────
 async function renderLb(qi){
   show('leaderboard');
   const cn=qi+1;
@@ -1109,9 +1154,12 @@ async function renderLb(qi){
   $('lb-sub').textContent={5:'One third done! 🔥',10:'Halfway there! 🚀',15:'Final Standings! 🎊'}[cn]||'';
 
   let players=[];
-  try{const{data}=await sb.from('players').select('*').order('score',{ascending:false});players=data||[]}catch(_){}
+  try{
+    const{data}=await sb.from('players').select('*').order('score',{ascending:false});
+    players=data||[];
+  }catch(_){}
 
-  if(qi===14) doConfetti(100);
+  if(qi===LAST_Q) doConfetti(100);
   buildPodium('podium',players.slice(0,3));
 
   const myRank=players.findIndex(p=>p.name===me.name)+1;
@@ -1126,10 +1174,15 @@ async function renderLb(qi){
   $('lb-list').innerHTML=players.map((p,i)=>{
     const prev=prevLb.findIndex(x=>x.name===p.name),rank=i+1;
     let d='→',dc='same';
-    if(prev!==-1&&prev+1!==rank){d=prev+1>rank?`↑${prev+1-rank}`:`↓${rank-prev-1}`;dc=prev+1>rank?'up':'down'}
-    return `<div class="lbrow ${p.name===me.name?'me':''}" style="animation-delay:${Math.min(i,20)*45}ms">
+    if(prev!==-1&&prev+1!==rank){
+      d=prev+1>rank?`↑${prev+1-rank}`:`↓${rank-prev-1}`;
+      dc=prev+1>rank?'up':'down';
+    }
+    return `<div class="lbrow ${p.name===me.name?'me':''}"
+      style="animation-delay:${Math.min(i,20)*45}ms">
       <div class="lbrank">${['🥇','🥈','🥉'][i]||rank}</div>
-      <div class="lbname">${esc(p.name)}${p.is_moderator?' 🎤':''}${p.name===me.name?' <em style="color:var(--gray);font-size:0.78rem">(you)</em>':''}</div>
+      <div class="lbname">${esc(p.name)}${p.is_moderator?' 🎤':''}${p.name===me.name?
+        ' <em style="color:var(--gray);font-size:0.78rem">(you)</em>':''}</div>
       <div class="lbpts">${p.score||0}</div>
       <div class="lbdelta ${dc}">${d}</div>
     </div>`;
@@ -1140,7 +1193,7 @@ async function renderLb(qi){
   $('lb-wait').style.display=me.isMod?'none':'block';
   if(me.isMod){
     const btn=$('lb-next');btn.disabled=false;
-    if(qi===14){
+    if(qi===LAST_Q){
       btn.textContent='🎉 Show Final Results';
       btn.onclick=async()=>{
         btn.disabled=true;
@@ -1150,9 +1203,13 @@ async function renderLb(qi){
     }else{
       btn.textContent='▶️ Next Question';
       btn.onclick=async()=>{
-        btn.disabled=true;answered=false;myIdx=-1;myEarned=0;
-        try{await sb.from('game_state').update({phase:'question',current_question:qi+1,question_start_time:new Date().toISOString()}).eq('id',1)}
-        catch(_){btn.disabled=false;toast('❌ Try again')}
+        btn.disabled=true;
+        try{
+          await sb.from('game_state').update({
+            phase:'question',current_question:qi+1,
+            question_start_time:new Date().toISOString()
+          }).eq('id',1);
+        }catch(_){btn.disabled=false;toast('❌ Try again')}
       };
     }
   }
@@ -1172,31 +1229,33 @@ function buildPodium(cid,top3){
   ).join('');
 }
 
-// ── END ───────────────────────────────────
+// ── END SCREEN ────────────────────────────
 async function renderEnd(){
-  show('end');doConfetti(130);
+  show('end');doConfetti(130);stopHeartbeat();
   let players=[];
-  try{const{data}=await sb.from('players').select('*').order('score',{ascending:false});players=data||[]}catch(_){}
-  if(players.length>0) $('end-hl').textContent=`🏆 ${players[0].name} knows this office better than anyone!`;
+  try{
+    const{data}=await sb.from('players').select('*').order('score',{ascending:false});
+    players=data||[];
+  }catch(_){}
+  if(players.length>0)
+    $('end-hl').textContent=`🏆 ${players[0].name} knows this office better than anyone!`;
   buildPodium('end-pod',players.slice(0,3));
   $('end-lb').innerHTML=players.map((p,i)=>
-    `<div class="lbrow ${p.name===me.name?'me':''}" style="animation-delay:${Math.min(i,20)*45}ms">
+    `<div class="lbrow ${p.name===me.name?'me':''}"
+      style="animation-delay:${Math.min(i,20)*45}ms">
       <div class="lbrank">${['🥇','🥈','🥉'][i]||`#${i+1}`}</div>
-      <div class="lbname">${esc(p.name)}${p.name===me.name?' <em style="color:var(--gray);font-size:0.78rem">(you)</em>':''}</div>
+      <div class="lbname">${esc(p.name)}${p.name===me.name?
+        ' <em style="color:var(--gray);font-size:0.78rem">(you)</em>':''}</div>
       <div class="lbpts">${p.score||0} pts</div>
     </div>`
   ).join('');
   $('end-reset').style.display=me?.isMod?'block':'none';
 }
 
-// ── ONLINE ────────────────────────────────
-async function updateOnline(){
-  try{const{count}=await sb.from('players').select('*',{count:'exact',head:true});$('ocount').textContent=`${count||0} online`}catch(_){}
-}
-
 // ── CONFETTI ──────────────────────────────
 function doConfetti(n=60){
-  const cv=$('cv');cv.width=window.innerWidth;cv.height=window.innerHeight;
+  const cv=$('cv');
+  cv.width=window.innerWidth;cv.height=window.innerHeight;
   const ctx=cv.getContext('2d');
   const cols=['#FFD700','#FF8C00','#FF4757','#00D2FF','#2ED573','#fff','#A29BFE'];
   const ps=Array.from({length:n},()=>({
@@ -1210,14 +1269,24 @@ function doConfetti(n=60){
   (function draw(){
     ctx.clearRect(0,0,cv.width,cv.height);
     ps.forEach(p=>{
-      ctx.save();ctx.globalAlpha=p.op;ctx.translate(p.x,p.y);ctx.rotate(p.r*Math.PI/180);
-      ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();
+      ctx.save();ctx.globalAlpha=p.op;
+      ctx.translate(p.x,p.y);ctx.rotate(p.r*Math.PI/180);
+      ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
       p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.vy+=0.08;
       if(p.y>cv.height*0.8)p.op=Math.max(0,p.op-0.03);
     });
     if(++f<220)requestAnimationFrame(draw);
     else ctx.clearRect(0,0,cv.width,cv.height);
   })();
+}
+
+// ── TOAST ─────────────────────────────────
+let toastTimer;
+function toast(m,d=2600){
+  const e=$('toast');e.textContent=m;e.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>e.classList.remove('show'),d);
 }
 
 // ── KICK OFF ──────────────────────────────
