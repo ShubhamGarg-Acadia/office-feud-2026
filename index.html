@@ -256,7 +256,8 @@ label.mod-row{
 .reveal-q{font-family:'Barlow Condensed',sans-serif;font-style:italic;font-size:clamp(0.95rem,2.5vw,1.2rem);color:var(--gray);text-align:center;margin-top:6px}
 .fboard{display:flex;flex-direction:column;gap:7px}
 .frow{display:flex;align-items:stretch;border-radius:10px;overflow:hidden;height:54px;opacity:0;transform-origin:left center}
-.frow.flip{animation:flipIn 0.45s var(--ease) forwards}
+.frow.flip{animation:flipIn 0.45s var(--ease) forwards;opacity:1}
+@media(prefers-reduced-motion:reduce){.frow{opacity:1;transform:none}.frow.flip{animation:none}}
 .frank{width:46px;flex-shrink:0;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);border-right:3px solid var(--gold)}
 .frank.r1{color:var(--gold);border-color:var(--gold)}
 .frank.r2{color:#C0C0C0;border-color:#C0C0C0}
@@ -589,10 +590,8 @@ let channel=null, timerID=null, heartbeatID=null;
 let answered=false, myIdx=-1, myEarned=0;
 let prevLb=[], submitting=false;
 let reconnDelay=CFG.reconnBase;
-let stateSeq=0;         // guards against stale async state transitions
 let handlingState=false; // prevents concurrent handleState executions
-let connBadCount=0;     // only show banner after multiple failures
-let lobbyDebounce=null, onlineDebounce=null, ansCountDebounce=null;
+let connBadCount=0;      // only show banner after multiple failures
 
 // ── HELPERS ───────────────────────────────
 const $=id=>document.getElementById(id);
@@ -608,9 +607,6 @@ function debounce(fn,ms){
 
 // Jitter — adds random ms to reconnect so 50 clients don't all retry simultaneously
 function jitter(base){return base+Math.floor(Math.random()*base*0.5)}
-
-let toastT;
-function toast(m,d=2600){const e=$('toast');e.textContent=m;e.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('show'),d)}
 
 function show(n){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -687,6 +683,7 @@ async function boot(){
 
 // ── REALTIME ──────────────────────────────
 function subscribe(){
+  if(!sb) return; // guard: called before Supabase initialised
   // Fully clean up old channel before creating new one
   if(channel){
     try{sb.removeChannel(channel)}catch(_){}
@@ -734,12 +731,18 @@ async function queueState(newState){
   stateQueue=newState;
   if(handlingState) return; // another call will pick up stateQueue when done
   handlingState=true;
-  while(stateQueue){
-    const s=stateQueue;
-    stateQueue=null;
-    await handleState(s);
+  try{
+    while(stateQueue){
+      const s=stateQueue;
+      stateQueue=null;
+      await handleState(s);
+    }
+  }catch(e){
+    console.warn('handleState error:',e.message);
+  }finally{
+    // ALWAYS reset — if this stays true the game locks up for everyone
+    handlingState=false;
   }
-  handlingState=false;
 }
 
 async function syncState(){
@@ -867,6 +870,7 @@ async function refreshLobby(){
 }
 
 async function doStart(){
+  if(!me?.isMod) return;
   const btn=$('start-btn');
   btn.disabled=true;btn.innerHTML='<span class="spin"></span> Starting...';
   try{
@@ -981,12 +985,20 @@ async function pickAns(idx){
   const elapsed=(Date.now()-new Date(gs.question_start_time).getTime())/1000;
   if(elapsed>=CFG.qSecs){submitting=false;return}
 
+  // Edge case: timer expired between button render and tap — record timeout
+  if(elapsed>=CFG.qSecs){
+    disableAnswers();
+    await saveAns(-1,0,CFG.qSecs);
+    submitting=false;
+    return;
+  }
+
   myIdx=idx;
   const raw=QS[gs.current_question].a[idx].s;
   const mult=elapsed<=5?1.5:elapsed<=10?1.2:1.0;
   myEarned=Math.round(raw*mult);
 
-  // Optimistic UI
+  // Optimistic UI — update before async DB call for instant feedback
   $(`ab${idx}`)?.classList.add('sel');
   disableAnswers();
   toast('⚡ Answer locked in!');
@@ -995,28 +1007,41 @@ async function pickAns(idx){
   submitting=false;
 }
 
-async function saveAns(idx,earned,elapsed){
+async function saveAns(idx,earned,elapsed,attempt=0){
+  if(!gs) return;
   const qi=gs.current_question;
+  const payload={
+    player_name:me.name, question_index:qi,
+    answer_index:idx,
+    raw_score:idx===-1?0:QS[qi].a[idx].s,
+    multiplied_score:earned,
+    time_taken:Math.round(elapsed*10)/10
+  };
   try{
-    // UPSERT — safe against any duplicate submission race
-    const{error}=await sb.from('answers').upsert({
-      player_name:me.name, question_index:qi,
-      answer_index:idx,
-      raw_score:idx===-1?0:QS[qi].a[idx].s,
-      multiplied_score:earned,
-      time_taken:Math.round(elapsed*10)/10
-    },{onConflict:'player_name,question_index'});
-    if(error) throw error;
+    // UPSERT — idempotent, safe against any duplicate submission race
+    const{error:ae}=await sb.from('answers')
+      .upsert(payload,{onConflict:'player_name,question_index'});
+    if(ae) throw ae;
 
-    // Update score in DB and local state atomically
+    // Score update: calculated value (not increment) — safe to retry
     const newScore=me.score+earned;
-    await sb.from('players').update({score:newScore}).eq('name',me.name);
-    me.score=newScore;
+    const{error:pe}=await sb.from('players').update({score:newScore}).eq('name',me.name);
+    if(pe) throw pe;
 
+    // Commit locally only after DB confirms
+    me.score=newScore;
     const sv=$('q-score');
     if(sv){sv.textContent=newScore;sv.classList.remove('pop');void sv.offsetWidth;sv.classList.add('pop')}
 
-  }catch(e){console.warn('saveAns failed:',e.message)}
+  }catch(e){
+    console.warn(`saveAns attempt ${attempt+1} failed:`,e.message);
+    // Retry once after 1.5s — catches transient network errors
+    if(attempt===0){
+      await new Promise(r=>setTimeout(r,1500));
+      await saveAns(idx,earned,elapsed,1);
+    }
+    // If retry also fails, score discrepancy fixed on reveal screen (DB re-fetch)
+  }
 }
 
 async function updateAnsCount(){
@@ -1033,6 +1058,7 @@ async function updateAnsCount(){
 }
 
 async function doSkip(){
+  if(!me?.isMod) return;
   stopTimer();
   try{
     await sb.from('game_state').update({
@@ -1055,24 +1081,32 @@ async function renderReveal(qi){
   const q=QS[qi];
   $('reveal-q').textContent=q.q;
 
-  // Sync answer from DB if needed (page refresh / reconnect during reveal)
-  if(!answered){
-    try{
-      const{data:a}=await sb.from('answers')
-        .select('answer_index,multiplied_score')
-        .eq('player_name',me.name).eq('question_index',qi).maybeSingle();
-      if(a){myIdx=a.answer_index;myEarned=a.multiplied_score;answered=true}
-    }catch(_){}
-  }
-  // Always get authoritative score from DB
-  try{
-    const{data:p}=await sb.from('players').select('score').eq('name',me.name).maybeSingle();
-    if(p) me.score=p.score||0;
-  }catch(_){}
+  // Show current cached values immediately — no blank flash while DB fetches
   $('rev-total').textContent=me.score;
 
-  // ── BUG FIX: sort by score DESC for display (highest = #1) ──
-  // Also find the top-scoring answer index in the ORIGINAL array
+  // Fetch answer + authoritative score in parallel (background)
+  const fetches=[];
+  if(!answered){
+    fetches.push(
+      sb.from('answers').select('answer_index,multiplied_score')
+        .eq('player_name',me.name).eq('question_index',qi).maybeSingle()
+        .then(({data:a})=>{if(a){myIdx=a.answer_index;myEarned=a.multiplied_score;answered=true}})
+        .catch(()=>{})
+    );
+  }
+  fetches.push(
+    sb.from('players').select('score').eq('name',me.name).maybeSingle()
+      .then(({data:p})=>{
+        if(p){
+          me.score=p.score||0;
+          $('rev-total').textContent=me.score;
+        }
+      })
+      .catch(()=>{})
+  );
+  await Promise.all(fetches);
+
+  // Sort by score DESC for display (highest = #1, Family Feud style)
   const sorted=[...q.a].map((a,origIdx)=>({...a,origIdx})).sort((x,y)=>y.s-x.s);
   const topScore=sorted[0].s;
   const myIsTop=myIdx>=0&&q.a[myIdx].s===topScore&&topScore>0;
